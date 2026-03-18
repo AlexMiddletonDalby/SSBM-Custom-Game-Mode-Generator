@@ -1,0 +1,10 @@
+[package]
+name = "ssbm-custom-game-mode-generator"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bit-vec = "0.9.1"
+crossterm = "0.29.0"
+ratatui = "0.30.0"
+tui-checkbox = "0.4.3"
