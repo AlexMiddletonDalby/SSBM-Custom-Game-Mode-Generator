@@ -1,5 +1,8 @@
+mod check_list;
 mod code_generation;
-mod stages;
+mod melee;
+
+use check_list::CheckList;
 
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::DefaultTerminal;
@@ -7,12 +10,12 @@ use ratatui::prelude::*;
 use ratatui::widgets::Block;
 use ratatui::widgets::Padding;
 use ratatui::widgets::Paragraph;
-use stages::{StageData, Stages};
 use std::io;
 
 #[derive(Debug)]
 pub struct App {
-    stage_data: Vec<StageData>,
+    stages: Vec<melee::Entry>,
+    items: Vec<melee::Entry>,
     output_data: String,
     cursor_position: usize,
     exit: bool,
@@ -21,37 +24,8 @@ pub struct App {
 impl Default for App {
     fn default() -> Self {
         App {
-            stage_data: vec![
-                StageData::new("Battlefield", 0, true),
-                StageData::new("Big Blue", 1, false),
-                StageData::new("Brinstar", 2, false),
-                StageData::new("Brinstar Depths", 3, false),
-                StageData::new("Corneria", 4, false),
-                StageData::new("Dream Land N64", 5, true),
-                StageData::new("Final Destination", 6, true),
-                StageData::new("Flat Zone", 7, false),
-                StageData::new("Fountain of Dreams", 8, true),
-                StageData::new("Fourside", 9, false),
-                StageData::new("Great Bay", 10, false),
-                StageData::new("Green Greens", 11, false),
-                StageData::new("Icicle Mountain", 12, false),
-                StageData::new("Jungle Japes", 13, false),
-                StageData::new("Kongo Jungle", 14, false),
-                StageData::new("Kongo Jungle N64", 15, false),
-                StageData::new("Mushroom Kingdom", 16, false),
-                StageData::new("Mushroom Kingdom II", 17, false),
-                StageData::new("Mute City", 18, false),
-                StageData::new("Onett", 19, false),
-                StageData::new("Poke Floats", 20, false),
-                StageData::new("Pokemon Stadium", 21, true),
-                StageData::new("Princess Peach's Castle", 22, false),
-                StageData::new("Rainbow Cruise", 23, false),
-                StageData::new("Temple", 24, false),
-                StageData::new("Venom", 25, false),
-                StageData::new("Yoshi's Island", 26, false),
-                StageData::new("Yoshi's Island N64", 27, false),
-                StageData::new("Yoshi's Story", 28, true),
-            ],
+            stages: melee::default_stages(),
+            items: melee::default_items(),
             output_data: String::new(),
             cursor_position: 0,
             exit: false,
@@ -78,19 +52,35 @@ impl App {
             .title_alignment(HorizontalAlignment::Center)
             .padding(Padding::symmetric(2, 1));
 
-        let stages = Stages::new(self.stage_data.clone());
+        let stages = CheckList::new(
+            "Stages",
+            self.stages
+                .iter()
+                .map(|stage| stage.checkbox.clone())
+                .collect(),
+        );
+        let items = CheckList::new(
+            "Items",
+            self.items
+                .iter()
+                .map(|item| item.checkbox.clone())
+                .collect(),
+        );
 
         let output =
             Paragraph::new(self.output_data.clone()).block(Block::bordered().title("Output"));
 
-        let layout =
-            Layout::horizontal(vec![Constraint::Percentage(50), Constraint::Percentage(50)])
-                .spacing(2)
+        let main_layout =
+            Layout::vertical(vec![Constraint::Percentage(70), Constraint::Percentage(30)])
                 .split(block.inner(frame.area()));
+        let options_layout =
+            Layout::horizontal(vec![Constraint::Percentage(50), Constraint::Percentage(50)])
+                .split(main_layout[0]);
 
         frame.render_widget(block, frame.area());
-        frame.render_widget(stages, layout[0]);
-        frame.render_widget(output, layout[1]);
+        frame.render_widget(stages, options_layout[0]);
+        frame.render_widget(items, options_layout[1]);
+        frame.render_widget(output, main_layout[1]);
     }
 
     fn quit(&mut self) {
@@ -98,13 +88,21 @@ impl App {
     }
 
     fn update_stage_selection(&mut self) {
-        for (index, stage) in self.stage_data.iter_mut().enumerate() {
-            stage.selected = index == self.cursor_position;
+        for (index, stage) in self.stages.iter_mut().enumerate() {
+            stage.checkbox.selected = index == self.cursor_position;
         }
     }
 
     fn update_output(&mut self) {
-        self.output_data = code_generation::generate(self.stage_data.clone());
+        self.output_data = code_generation::generate(
+            self.stages
+                .iter()
+                .map(|stage| code_generation::Bit {
+                    pos: stage.bit,
+                    state: stage.checkbox.checked,
+                })
+                .collect(),
+        );
     }
 
     fn handle_keys(&mut self, key_event: KeyEvent) {
@@ -117,13 +115,13 @@ impl App {
                     }
                 }
                 KeyCode::Down => {
-                    if self.cursor_position < self.stage_data.len() - 1 {
+                    if self.cursor_position < self.stages.len() - 1 {
                         self.cursor_position += 1;
                         self.update_stage_selection();
                     }
                 }
                 KeyCode::Char(' ') => {
-                    self.stage_data[self.cursor_position].flip();
+                    self.stages[self.cursor_position].checkbox.flip();
                     self.update_output();
                 }
                 KeyCode::Char('q') => self.quit(),
