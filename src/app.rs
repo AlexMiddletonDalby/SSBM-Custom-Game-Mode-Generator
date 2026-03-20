@@ -10,14 +10,22 @@ use ratatui::prelude::*;
 use ratatui::widgets::Block;
 use ratatui::widgets::Padding;
 use ratatui::widgets::Paragraph;
+use std::cmp;
 use std::io;
+
+#[derive(Debug, PartialEq, Eq)]
+enum Section {
+    Stages,
+    Items,
+}
 
 #[derive(Debug)]
 pub struct App {
     stages: Vec<melee::Entry>,
     items: Vec<melee::Entry>,
     output_data: String,
-    cursor_position: usize,
+    cursor_section: Section,
+    cursor_row: usize,
     exit: bool,
 }
 
@@ -27,7 +35,8 @@ impl Default for App {
             stages: melee::default_stages(),
             items: melee::default_items(),
             output_data: String::new(),
-            cursor_position: 0,
+            cursor_section: Section::Stages,
+            cursor_row: 0,
             exit: false,
         }
     }
@@ -35,7 +44,7 @@ impl Default for App {
 
 impl App {
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
-        self.update_stage_selection();
+        self.update_selection();
         self.update_output();
 
         while !self.exit {
@@ -87,9 +96,24 @@ impl App {
         self.exit = true;
     }
 
-    fn update_stage_selection(&mut self) {
+    fn current_section_rows(&self) -> usize {
+        match self.cursor_section {
+            Section::Stages => self.stages.len(),
+            Section::Items => self.items.len(),
+        }
+    }
+
+    fn update_selection(&mut self) {
+        self.cursor_row = cmp::min(self.cursor_row, self.current_section_rows() - 1);
+
         for (index, stage) in self.stages.iter_mut().enumerate() {
-            stage.checkbox.selected = index == self.cursor_position;
+            stage.checkbox.selected =
+                self.cursor_section == Section::Stages && index == self.cursor_row;
+        }
+
+        for (index, item) in self.items.iter_mut().enumerate() {
+            item.checkbox.selected =
+                self.cursor_section == Section::Items && index == self.cursor_row;
         }
     }
 
@@ -109,19 +133,38 @@ impl App {
         if key_event.kind == KeyEventKind::Press {
             match key_event.code {
                 KeyCode::Up => {
-                    if self.cursor_position > 0 {
-                        self.cursor_position -= 1;
-                        self.update_stage_selection();
+                    if self.cursor_row > 0 {
+                        self.cursor_row -= 1;
+                        self.update_selection();
                     }
                 }
                 KeyCode::Down => {
-                    if self.cursor_position < self.stages.len() - 1 {
-                        self.cursor_position += 1;
-                        self.update_stage_selection();
+                    if self.cursor_row < self.current_section_rows() - 1 {
+                        self.cursor_row += 1;
+                        self.update_selection();
+                    }
+                }
+                KeyCode::Left => {
+                    if self.cursor_section == Section::Items {
+                        self.cursor_section = Section::Stages;
+                        self.update_selection();
+                    }
+                }
+                KeyCode::Right => {
+                    if self.cursor_section == Section::Stages {
+                        self.cursor_section = Section::Items;
+                        self.update_selection();
                     }
                 }
                 KeyCode::Char(' ') => {
-                    self.stages[self.cursor_position].checkbox.flip();
+                    match self.cursor_section {
+                        Section::Stages => {
+                            self.stages[self.cursor_row].checkbox.flip();
+                        }
+                        Section::Items => {
+                            self.items[self.cursor_row].checkbox.flip();
+                        }
+                    }
                     self.update_output();
                 }
                 KeyCode::Char('q') => self.quit(),
