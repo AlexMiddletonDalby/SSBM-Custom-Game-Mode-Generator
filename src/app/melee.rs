@@ -9,23 +9,23 @@ pub struct Entry {
 pub fn default_stages() -> Vec<Entry> {
     vec![
         Entry {
-            bit: 0,
+            bit: 7,
             checkbox: CheckboxEntry::new("Battlefield", true),
         },
         Entry {
-            bit: 1,
+            bit: 11,
             checkbox: CheckboxEntry::new("Big Blue", false),
         },
         Entry {
-            bit: 2,
+            bit: 28,
             checkbox: CheckboxEntry::new("Brinstar", false),
         },
         Entry {
-            bit: 3,
+            bit: 16,
             checkbox: CheckboxEntry::new("Brinstar Depths", false),
         },
         Entry {
-            bit: 4,
+            bit: 25,
             checkbox: CheckboxEntry::new("Corneria", false),
         },
         Entry {
@@ -37,91 +37,91 @@ pub fn default_stages() -> Vec<Entry> {
             checkbox: CheckboxEntry::new("Final Destination", true),
         },
         Entry {
-            bit: 7,
+            bit: 8,
             checkbox: CheckboxEntry::new("Flat Zone", false),
         },
         Entry {
-            bit: 8,
+            bit: 26,
             checkbox: CheckboxEntry::new("Fountain of Dreams", true),
         },
         Entry {
-            bit: 9,
+            bit: 10,
             checkbox: CheckboxEntry::new("Fourside", false),
         },
         Entry {
-            bit: 10,
+            bit: 29,
             checkbox: CheckboxEntry::new("Great Bay", false),
         },
         Entry {
-            bit: 11,
+            bit: 14,
             checkbox: CheckboxEntry::new("Green Greens", false),
         },
         Entry {
-            bit: 12,
+            bit: 21,
             checkbox: CheckboxEntry::new("Icicle Mountain", false),
         },
         Entry {
-            bit: 13,
+            bit: 18,
             checkbox: CheckboxEntry::new("Jungle Japes", false),
         },
         Entry {
-            bit: 14,
+            bit: 30,
             checkbox: CheckboxEntry::new("Kongo Jungle", false),
         },
         Entry {
-            bit: 15,
+            bit: 3,
             checkbox: CheckboxEntry::new("Kongo Jungle N64", false),
         },
         Entry {
-            bit: 16,
+            bit: 20,
             checkbox: CheckboxEntry::new("Mushroom Kingdom", false),
         },
         Entry {
-            bit: 17,
+            bit: 9,
             checkbox: CheckboxEntry::new("Mushroom Kingdom II", false),
         },
         Entry {
-            bit: 18,
+            bit: 23,
             checkbox: CheckboxEntry::new("Mute City", false),
         },
         Entry {
-            bit: 19,
+            bit: 22,
             checkbox: CheckboxEntry::new("Onett", false),
         },
         Entry {
-            bit: 20,
+            bit: 12,
             checkbox: CheckboxEntry::new("Poke Floats", false),
         },
         Entry {
-            bit: 21,
+            bit: 24,
             checkbox: CheckboxEntry::new("Pokemon Stadium", true),
         },
         Entry {
-            bit: 22,
+            bit: 31,
             checkbox: CheckboxEntry::new("Princess Peach's Castle", false),
         },
         Entry {
-            bit: 23,
+            bit: 19,
             checkbox: CheckboxEntry::new("Rainbow Cruise", false),
         },
         Entry {
-            bit: 24,
+            bit: 17,
             checkbox: CheckboxEntry::new("Temple", false),
         },
         Entry {
-            bit: 25,
+            bit: 13,
             checkbox: CheckboxEntry::new("Venom", false),
         },
         Entry {
-            bit: 26,
+            bit: 15,
             checkbox: CheckboxEntry::new("Yoshi's Island", false),
         },
         Entry {
-            bit: 27,
+            bit: 4,
             checkbox: CheckboxEntry::new("Yoshi's Island N64", false),
         },
         Entry {
-            bit: 28,
+            bit: 27,
             checkbox: CheckboxEntry::new("Yoshi's Story", true),
         },
     ]
