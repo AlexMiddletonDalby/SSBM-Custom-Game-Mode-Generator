@@ -2,11 +2,11 @@ mod check_list;
 mod code_generation;
 mod cycle_button;
 mod melee;
-mod numeric_button;
+mod number_entry_button;
 
 use check_list::CheckList;
 use cycle_button::CycleButton;
-use numeric_button::NumericButton;
+use number_entry_button::NumberEntryButton;
 
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::DefaultTerminal;
@@ -42,7 +42,7 @@ impl Section {
 
 #[derive(Debug)]
 struct Widgets<'a> {
-    stocks: NumericButton<'a>,
+    stocks: NumberEntryButton<'a>,
     item_frequency: CycleButton,
     stages: CheckList,
     items: CheckList,
@@ -66,7 +66,7 @@ impl<'a> Default for App<'a> {
             cursor_pos: 0,
             exit: false,
             widgets: Widgets {
-                stocks: NumericButton::new("Stocks: ", "4"),
+                stocks: NumberEntryButton::new("Stocks: ", 4),
                 item_frequency: CycleButton::with_states(vec![
                     "Items: None".to_string(),
                     "Items: Very Low".to_string(),
