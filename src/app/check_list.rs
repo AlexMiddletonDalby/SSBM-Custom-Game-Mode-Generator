@@ -1,3 +1,4 @@
+use crossterm::event::KeyCode;
 use ratatui::prelude::*;
 use ratatui::widgets::{Block, Widget};
 use tui_checkbox::*;
@@ -25,24 +26,34 @@ impl CheckboxEntry {
 
 #[derive(Debug)]
 pub struct CheckList {
-    title: String,
-    data: Vec<CheckboxEntry>,
+    pub title: String,
+    pub entries: Vec<CheckboxEntry>,
 }
 
 impl CheckList {
-    pub fn new(title: &str, data: Vec<CheckboxEntry>) -> Self {
+    pub fn new(title: &str, entries: Vec<CheckboxEntry>) -> Self {
         Self {
             title: title.to_owned(),
-            data,
+            entries,
+        }
+    }
+
+    pub fn handle_key_press(&mut self, key: KeyCode, cursor_pos: usize) -> bool {
+        match key {
+            KeyCode::Char(' ') => {
+                self.entries[cursor_pos].flip();
+                return true;
+            }
+            _ => return false,
         }
     }
 }
 
-impl Widget for CheckList {
+impl Widget for &CheckList {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let block = Block::bordered().title(self.title);
+        let block = Block::bordered().title(self.title.clone());
         let widgets: Vec<Checkbox> = self
-            .data
+            .entries
             .iter()
             .map(|entry| {
                 Checkbox::new(entry.name.clone(), entry.checked).style(if entry.selected {
@@ -53,7 +64,7 @@ impl Widget for CheckList {
             })
             .collect();
 
-        let layout = Layout::vertical(self.data.iter().map(|_entry| Constraint::Length(1)))
+        let layout = Layout::vertical(self.entries.iter().map(|_entry| Constraint::Length(1)))
             .split(block.inner(area));
 
         for (index, widget) in widgets.iter().enumerate() {

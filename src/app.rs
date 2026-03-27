@@ -2,9 +2,11 @@ mod check_list;
 mod code_generation;
 mod cycle_button;
 mod melee;
+mod numeric_button;
 
 use check_list::CheckList;
 use cycle_button::CycleButton;
+use numeric_button::NumericButton;
 
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::DefaultTerminal;
@@ -14,8 +16,6 @@ use ratatui::widgets::Padding;
 use ratatui::widgets::Paragraph;
 use std::cmp;
 use std::io;
-
-use crate::app::cycle_button::CycleButtonData;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 enum CursorDirection {
@@ -41,46 +41,60 @@ impl Section {
 }
 
 #[derive(Debug)]
-pub struct App {
-    stocks: CycleButtonData,
-    item_frequency: CycleButtonData,
-    stages: Vec<melee::Entry>,
-    items: Vec<melee::Entry>,
+struct Widgets<'a> {
+    stocks: NumericButton<'a>,
+    item_frequency: CycleButton,
+    stages: CheckList,
+    items: CheckList,
+}
+
+#[derive(Debug)]
+pub struct App<'a> {
     output_data: String,
     cursor_section: Section,
     cursor_pos: usize,
     exit: bool,
+
+    widgets: Widgets<'a>,
 }
 
-impl Default for App {
+impl<'a> Default for App<'a> {
     fn default() -> Self {
         App {
-            stocks: CycleButtonData::with_states(vec![
-                "Stocks: 1".to_string(),
-                "Stocks: 2".to_string(),
-                "Stocks: 3".to_string(),
-                "Stocks: 4".to_string(),
-            ]),
-            item_frequency: CycleButtonData::with_states(vec![
-                "Items: None".to_string(),
-                "Items: Very Low".to_string(),
-                "Items: Low".to_string(),
-                "Items: Medium".to_string(),
-                "Items: High".to_string(),
-                "Items: Very High".to_string(),
-            ]),
-
-            stages: melee::default_stages(),
-            items: melee::default_items(),
             output_data: String::new(),
             cursor_section: Section::GameOptions,
             cursor_pos: 0,
             exit: false,
+            widgets: Widgets {
+                stocks: NumericButton::new("Stocks: ", "4"),
+                item_frequency: CycleButton::with_states(vec![
+                    "Items: None".to_string(),
+                    "Items: Very Low".to_string(),
+                    "Items: Low".to_string(),
+                    "Items: Medium".to_string(),
+                    "Items: High".to_string(),
+                    "Items: Very High".to_string(),
+                ]),
+                stages: CheckList::new(
+                    "Stages",
+                    melee::default_stages()
+                        .iter()
+                        .map(|stage| stage.checkbox.clone())
+                        .collect(),
+                ),
+                items: CheckList::new(
+                    "Items",
+                    melee::default_items()
+                        .iter()
+                        .map(|stage| stage.checkbox.clone())
+                        .collect(),
+                ),
+            },
         }
     }
 }
 
-impl App {
+impl<'a> App<'a> {
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
         self.update_selection();
         self.update_output();
@@ -93,7 +107,7 @@ impl App {
         Ok(())
     }
 
-    fn draw(&self, frame: &mut Frame) {
+    fn draw(&mut self, frame: &mut Frame) {
         let block = Block::bordered()
             .title("SSBM Custom Game Mode Generator v0.1")
             .title_alignment(HorizontalAlignment::Center)
@@ -114,37 +128,19 @@ impl App {
             .spacing(1)
             .split(game_options_block.inner(main_layout[0]));
 
-        let stocks = CycleButton::new(self.stocks.clone());
-        let item_frequency = CycleButton::new(self.item_frequency.clone());
-
         let stages_and_items =
             Layout::horizontal(vec![Constraint::Percentage(50), Constraint::Percentage(50)])
                 .split(main_layout[1]);
-
-        let stages = CheckList::new(
-            "Stages",
-            self.stages
-                .iter()
-                .map(|stage| stage.checkbox.clone())
-                .collect(),
-        );
-        let items = CheckList::new(
-            "Items",
-            self.items
-                .iter()
-                .map(|item| item.checkbox.clone())
-                .collect(),
-        );
 
         let output =
             Paragraph::new(self.output_data.clone()).block(Block::bordered().title("Output"));
 
         frame.render_widget(block, frame.area());
         frame.render_widget(game_options_block, main_layout[0]);
-        frame.render_widget(stocks, game_options[0]);
-        frame.render_widget(item_frequency, game_options[1]);
-        frame.render_widget(stages, stages_and_items[0]);
-        frame.render_widget(items, stages_and_items[1]);
+        frame.render_widget(&self.widgets.stocks, game_options[0]);
+        frame.render_widget(&self.widgets.item_frequency, game_options[1]);
+        frame.render_widget(&self.widgets.stages, stages_and_items[0]);
+        frame.render_widget(&self.widgets.items, stages_and_items[1]);
         frame.render_widget(output, main_layout[2]);
     }
 
@@ -155,37 +151,39 @@ impl App {
     fn current_section_rows(&self) -> usize {
         match self.cursor_section {
             Section::GameOptions => 2,
-            Section::Stages => self.stages.len(),
-            Section::Items => self.items.len(),
+            Section::Stages => self.widgets.stages.entries.len(),
+            Section::Items => self.widgets.items.entries.len(),
         }
     }
 
     fn update_selection(&mut self) {
         self.cursor_pos = cmp::min(self.cursor_pos, self.current_section_rows() - 1);
 
-        self.stocks.selected = self.cursor_section == Section::GameOptions && self.cursor_pos == 0;
+        self.widgets.stocks.selected =
+            self.cursor_section == Section::GameOptions && self.cursor_pos == 0;
 
-        self.item_frequency.selected =
+        self.widgets.item_frequency.selected =
             self.cursor_section == Section::GameOptions && self.cursor_pos == 1;
 
-        for (index, stage) in self.stages.iter_mut().enumerate() {
-            stage.checkbox.selected =
-                self.cursor_section == Section::Stages && index == self.cursor_pos;
+        for (index, entry) in self.widgets.stages.entries.iter_mut().enumerate() {
+            entry.selected = self.cursor_section == Section::Stages && index == self.cursor_pos;
         }
 
-        for (index, item) in self.items.iter_mut().enumerate() {
-            item.checkbox.selected =
-                self.cursor_section == Section::Items && index == self.cursor_pos;
+        for (index, entry) in self.widgets.items.entries.iter_mut().enumerate() {
+            entry.selected = self.cursor_section == Section::Items && index == self.cursor_pos;
         }
     }
 
     fn update_output(&mut self) {
         self.output_data = code_generation::generate(
-            self.stages
+            self.widgets
+                .stages
+                .entries
                 .iter()
-                .map(|stage| code_generation::Bit {
-                    pos: stage.bit,
-                    state: stage.checkbox.checked,
+                .enumerate()
+                .map(|(index, entry)| code_generation::Bit {
+                    pos: melee::default_stages()[index].bit,
+                    state: entry.checked,
                 })
                 .collect(),
         );
@@ -250,27 +248,29 @@ impl App {
                         self.increment_cursor();
                     }
                 },
-                KeyCode::Char(' ') => {
+                KeyCode::Char('q') => self.quit(),
+                key => {
+                    let mut handled: bool = false;
                     match self.cursor_section {
                         Section::GameOptions => {
                             if self.cursor_pos == 0 {
-                                self.stocks.next();
+                                handled = self.widgets.stocks.handle_key_press(key);
                             }
                             if self.cursor_pos == 1 {
-                                self.item_frequency.next();
+                                handled = self.widgets.item_frequency.handle_key_press(key);
                             }
                         }
                         Section::Stages => {
-                            self.stages[self.cursor_pos].checkbox.flip();
+                            handled = self.widgets.stages.handle_key_press(key, self.cursor_pos);
                         }
                         Section::Items => {
-                            self.items[self.cursor_pos].checkbox.flip();
+                            handled = self.widgets.items.handle_key_press(key, self.cursor_pos);
                         }
                     }
-                    self.update_output();
+                    if handled {
+                        self.update_output();
+                    }
                 }
-                KeyCode::Char('q') => self.quit(),
-                _ => {}
             }
         }
     }
