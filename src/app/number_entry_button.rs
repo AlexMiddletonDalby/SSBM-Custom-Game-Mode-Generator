@@ -56,6 +56,14 @@ impl<'a> NumberEntryButton<'a> {
         self.editing = false;
     }
 
+    fn editor_has_space(&self) -> bool {
+        if let Some(line) = self.editor.lines().first().clone() {
+            return line.chars().count() < 2;
+        }
+
+        return true;
+    }
+
     pub fn handle_key_press(&mut self, key: KeyCode) -> bool {
         if key == KeyCode::Enter || key == KeyCode::Char(' ') {
             if self.editing {
@@ -65,9 +73,18 @@ impl<'a> NumberEntryButton<'a> {
             }
             return true;
         }
-        if is_numeric(key) {
+        if is_numeric(key) && self.editor_has_space() {
             self.editor.input(Input {
                 key: Key::Char(key.as_char().unwrap()),
+                ctrl: false,
+                alt: false,
+                shift: false,
+            });
+            return true;
+        }
+        if key == KeyCode::Backspace {
+            self.editor.input(Input {
+                key: Key::Backspace,
                 ctrl: false,
                 alt: false,
                 shift: false,
