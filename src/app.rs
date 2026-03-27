@@ -42,7 +42,9 @@ impl Section {
 
 #[derive(Debug)]
 struct Widgets<'a> {
+    mode: CycleButton,
     stocks: NumberEntryButton<'a>,
+    time: NumberEntryButton<'a>,
     item_frequency: CycleButton,
     stages: CheckList,
     items: CheckList,
@@ -66,7 +68,12 @@ impl<'a> Default for App<'a> {
             cursor_pos: 0,
             exit: false,
             widgets: Widgets {
-                stocks: NumberEntryButton::new("Stocks: ", 4),
+                mode: CycleButton::with_states(vec![
+                    "Mode: Direct".to_string(),
+                    "Mode: Doubles".to_string(),
+                ]),
+                stocks: NumberEntryButton::new("Stocks: ", 4, ""),
+                time: NumberEntryButton::new("Time: ", 8, " minutes"),
                 item_frequency: CycleButton::with_states(vec![
                     "Items: None".to_string(),
                     "Items: Very Low".to_string(),
@@ -124,9 +131,14 @@ impl<'a> App<'a> {
             .title("Game options")
             .title_alignment(HorizontalAlignment::Left);
 
-        let game_options = Layout::horizontal(vec![Constraint::Fill(1), Constraint::Fill(1)])
-            .spacing(1)
-            .split(game_options_block.inner(main_layout[0]));
+        let game_options = Layout::horizontal(vec![
+            Constraint::Fill(1),
+            Constraint::Fill(1),
+            Constraint::Fill(1),
+            Constraint::Fill(1),
+        ])
+        .spacing(1)
+        .split(game_options_block.inner(main_layout[0]));
 
         let stages_and_items =
             Layout::horizontal(vec![Constraint::Percentage(50), Constraint::Percentage(50)])
@@ -137,8 +149,10 @@ impl<'a> App<'a> {
 
         frame.render_widget(block, frame.area());
         frame.render_widget(game_options_block, main_layout[0]);
-        frame.render_widget(&self.widgets.stocks, game_options[0]);
-        frame.render_widget(&self.widgets.item_frequency, game_options[1]);
+        frame.render_widget(&self.widgets.mode, game_options[0]);
+        frame.render_widget(&self.widgets.stocks, game_options[1]);
+        frame.render_widget(&self.widgets.time, game_options[2]);
+        frame.render_widget(&self.widgets.item_frequency, game_options[3]);
         frame.render_widget(&self.widgets.stages, stages_and_items[0]);
         frame.render_widget(&self.widgets.items, stages_and_items[1]);
         frame.render_widget(output, main_layout[2]);
@@ -150,7 +164,7 @@ impl<'a> App<'a> {
 
     fn current_section_rows(&self) -> usize {
         match self.cursor_section {
-            Section::GameOptions => 2,
+            Section::GameOptions => 4,
             Section::Stages => self.widgets.stages.entries.len(),
             Section::Items => self.widgets.items.entries.len(),
         }
@@ -159,11 +173,17 @@ impl<'a> App<'a> {
     fn update_selection(&mut self) {
         self.cursor_pos = cmp::min(self.cursor_pos, self.current_section_rows() - 1);
 
-        self.widgets.stocks.selected =
+        self.widgets.mode.selected =
             self.cursor_section == Section::GameOptions && self.cursor_pos == 0;
 
-        self.widgets.item_frequency.selected =
+        self.widgets.stocks.selected =
             self.cursor_section == Section::GameOptions && self.cursor_pos == 1;
+
+        self.widgets.time.selected =
+            self.cursor_section == Section::GameOptions && self.cursor_pos == 2;
+
+        self.widgets.item_frequency.selected =
+            self.cursor_section == Section::GameOptions && self.cursor_pos == 3;
 
         for (index, entry) in self.widgets.stages.entries.iter_mut().enumerate() {
             entry.selected = self.cursor_section == Section::Stages && index == self.cursor_pos;
@@ -252,14 +272,13 @@ impl<'a> App<'a> {
                 key => {
                     let mut handled: bool = false;
                     match self.cursor_section {
-                        Section::GameOptions => {
-                            if self.cursor_pos == 0 {
-                                handled = self.widgets.stocks.handle_key_press(key);
-                            }
-                            if self.cursor_pos == 1 {
-                                handled = self.widgets.item_frequency.handle_key_press(key);
-                            }
-                        }
+                        Section::GameOptions => match self.cursor_pos {
+                            0 => handled = self.widgets.mode.handle_key_press(key),
+                            1 => handled = self.widgets.stocks.handle_key_press(key),
+                            2 => handled = self.widgets.time.handle_key_press(key),
+                            3 => handled = self.widgets.item_frequency.handle_key_press(key),
+                            _ => {}
+                        },
                         Section::Stages => {
                             handled = self.widgets.stages.handle_key_press(key, self.cursor_pos);
                         }
