@@ -1,5 +1,22 @@
 use bit_vec::BitVec;
 
+const STOCKS_CODE_TEMPLATE: &str = "C216E91C 0000000F # Stocks
+3CE08048 80E79D30
+54E7443E 2C070208
+4082005C 886DAFA0
+2C03000{1} 40820050
+3860{2} 3C808045
+6084310E 98640000
+3C808045 60843F9E
+98640000 3C808045
+60844E2E 98640000
+3C808045 60845CBE
+98640000 3E808048
+62940530 3E403001
+6252864C 92540000
+48000004 80010024
+60000000 00000000";
+
 const STAGE_CODE_TEMPLATE: &str = "C22668BC 00000009 # Stages
 88EDAFA0 2C07000{1}
 41820008 4082001C
@@ -72,12 +89,18 @@ pub struct Bit {
 
 pub fn generate(
     game_mode: GameMode,
+    stocks: u8,
     stages: Vec<Bit>,
     item_frequency: ItemFrequency,
     items: Vec<Bit>,
 ) -> String {
     let game_mode_val = game_mode.val();
     let mut stages_bitset = BitVec::from_elem(32, false);
+
+    let stocks_val = format!("{:01$X}", stocks, 4);
+    let stocks_code = STOCKS_CODE_TEMPLATE
+        .replace("{1}", &game_mode_val.to_string())
+        .replace("{2}", &stocks_val);
 
     for entry in stages {
         stages_bitset.set(entry.pos, entry.state);
@@ -104,5 +127,5 @@ pub fn generate(
             .replace("{3}", &to_hex(&items_bitset.to_string(), 8));
     }
 
-    return stage_code + "\n" + &items_code;
+    return stocks_code + "\n" + &stage_code + "\n" + &items_code;
 }

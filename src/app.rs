@@ -213,6 +213,7 @@ impl<'a> App<'a> {
 
         self.output_data = code_generation::generate(
             mode,
+            self.widgets.stocks.value,
             self.widgets
                 .stages
                 .entries
