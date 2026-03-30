@@ -130,128 +130,128 @@ pub fn default_stages() -> Vec<Entry> {
 pub fn default_items() -> Vec<Entry> {
     vec![
         Entry {
-            bit: 0,
-            checkbox: CheckboxEntry::new("Food", false),
-        },
-        Entry {
-            bit: 1,
-            checkbox: CheckboxEntry::new("Maxim Tomato", false),
-        },
-        Entry {
-            bit: 2,
-            checkbox: CheckboxEntry::new("Heart Container", false),
-        },
-        Entry {
-            bit: 3,
-            checkbox: CheckboxEntry::new("Warp Star", false),
-        },
-        Entry {
-            bit: 4,
-            checkbox: CheckboxEntry::new("Ray Gun", false),
-        },
-        Entry {
             bit: 5,
-            checkbox: CheckboxEntry::new("Super Scope", false),
-        },
-        Entry {
-            bit: 6,
-            checkbox: CheckboxEntry::new("Fire Flower", false),
-        },
-        Entry {
-            bit: 7,
-            checkbox: CheckboxEntry::new("Lip's Stick", false),
-        },
-        Entry {
-            bit: 8,
-            checkbox: CheckboxEntry::new("Star Rod", false),
-        },
-        Entry {
-            bit: 9,
-            checkbox: CheckboxEntry::new("Beam Sword", false),
-        },
-        Entry {
-            bit: 10,
-            checkbox: CheckboxEntry::new("Home-Run Bat", false),
-        },
-        Entry {
-            bit: 11,
-            checkbox: CheckboxEntry::new("Fan", false),
-        },
-        Entry {
-            bit: 12,
-            checkbox: CheckboxEntry::new("Hammer", false),
-        },
-        Entry {
-            bit: 13,
-            checkbox: CheckboxEntry::new("Green Shell", false),
-        },
-        Entry {
-            bit: 14,
-            checkbox: CheckboxEntry::new("Red Shell", false),
-        },
-        Entry {
-            bit: 15,
-            checkbox: CheckboxEntry::new("Flipper", false),
-        },
-        Entry {
-            bit: 16,
-            checkbox: CheckboxEntry::new("Freezie", false),
-        },
-        Entry {
-            bit: 17,
-            checkbox: CheckboxEntry::new("Mr. Saturn", false),
+            checkbox: CheckboxEntry::new("Food", true),
         },
         Entry {
             bit: 18,
-            checkbox: CheckboxEntry::new("Poke Ball", false),
+            checkbox: CheckboxEntry::new("Maxim Tomato", true),
         },
         Entry {
-            bit: 19,
-            checkbox: CheckboxEntry::new("Bob-omb", false),
-        },
-        Entry {
-            bit: 20,
-            checkbox: CheckboxEntry::new("Motion-Sensor Bomb", false),
-        },
-        Entry {
-            bit: 21,
-            checkbox: CheckboxEntry::new("Super Mushroom", false),
-        },
-        Entry {
-            bit: 22,
-            checkbox: CheckboxEntry::new("Poison Mushroom", false),
-        },
-        Entry {
-            bit: 23,
-            checkbox: CheckboxEntry::new("Starman", false),
-        },
-        Entry {
-            bit: 24,
-            checkbox: CheckboxEntry::new("Parasol", false),
-        },
-        Entry {
-            bit: 25,
-            checkbox: CheckboxEntry::new("Screw Attack", false),
-        },
-        Entry {
-            bit: 26,
-            checkbox: CheckboxEntry::new("Metal Box", false),
-        },
-        Entry {
-            bit: 27,
-            checkbox: CheckboxEntry::new("Bunny Hood", false),
-        },
-        Entry {
-            bit: 28,
-            checkbox: CheckboxEntry::new("Cloaking Device", false),
-        },
-        Entry {
-            bit: 29,
-            checkbox: CheckboxEntry::new("Barrel Cannon", false),
+            bit: 10,
+            checkbox: CheckboxEntry::new("Heart Container", true),
         },
         Entry {
             bit: 30,
-            checkbox: CheckboxEntry::new("Party Ball", false),
+            checkbox: CheckboxEntry::new("Warp Star", true),
+        },
+        Entry {
+            bit: 13,
+            checkbox: CheckboxEntry::new("Ray Gun", true),
+        },
+        Entry {
+            bit: 24,
+            checkbox: CheckboxEntry::new("Super Scope", true),
+        },
+        Entry {
+            bit: 3,
+            checkbox: CheckboxEntry::new("Fire Flower", true),
+        },
+        Entry {
+            bit: 14,
+            checkbox: CheckboxEntry::new("Lip's Stick", true),
+        },
+        Entry {
+            bit: 23,
+            checkbox: CheckboxEntry::new("Star Rod", true),
+        },
+        Entry {
+            bit: 27,
+            checkbox: CheckboxEntry::new("Beam Sword", true),
+        },
+        Entry {
+            bit: 1,
+            checkbox: CheckboxEntry::new("Home-Run Bat", true),
+        },
+        Entry {
+            bit: 9,
+            checkbox: CheckboxEntry::new("Fan", true),
+        },
+        Entry {
+            bit: 8,
+            checkbox: CheckboxEntry::new("Hammer", true),
+        },
+        Entry {
+            bit: 7,
+            checkbox: CheckboxEntry::new("Green Shell", true),
+        },
+        Entry {
+            bit: 21,
+            checkbox: CheckboxEntry::new("Red Shell", true),
+        },
+        Entry {
+            bit: 4,
+            checkbox: CheckboxEntry::new("Flipper", true),
+        },
+        Entry {
+            bit: 6,
+            checkbox: CheckboxEntry::new("Freezie", true),
+        },
+        Entry {
+            bit: 2,
+            checkbox: CheckboxEntry::new("Mr. Saturn", true),
+        },
+        Entry {
+            bit: 15,
+            checkbox: CheckboxEntry::new("Poke Ball", true),
+        },
+        Entry {
+            bit: 0,
+            checkbox: CheckboxEntry::new("Bob-omb", true),
+        },
+        Entry {
+            bit: 17,
+            checkbox: CheckboxEntry::new("Motion-Sensor Bomb", true),
+        },
+        Entry {
+            bit: 11,
+            checkbox: CheckboxEntry::new("Super Mushroom", true),
+        },
+        Entry {
+            bit: 31,
+            checkbox: CheckboxEntry::new("Poison Mushroom", true),
+        },
+        Entry {
+            bit: 26,
+            checkbox: CheckboxEntry::new("Starman", true),
+        },
+        Entry {
+            bit: 20,
+            checkbox: CheckboxEntry::new("Parasol", true),
+        },
+        Entry {
+            bit: 25,
+            checkbox: CheckboxEntry::new("Screw Attack", true),
+        },
+        Entry {
+            bit: 16,
+            checkbox: CheckboxEntry::new("Metal Box", true),
+        },
+        Entry {
+            bit: 22,
+            checkbox: CheckboxEntry::new("Bunny Hood", true),
+        },
+        Entry {
+            bit: 19,
+            checkbox: CheckboxEntry::new("Cloaking Device", true),
+        },
+        Entry {
+            bit: 29,
+            checkbox: CheckboxEntry::new("Barrel Cannon", true),
+        },
+        Entry {
+            bit: 12,
+            checkbox: CheckboxEntry::new("Party Ball", true),
         },
     ]
 }

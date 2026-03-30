@@ -17,6 +17,8 @@ use ratatui::widgets::Paragraph;
 use std::cmp;
 use std::io;
 
+use crate::app::code_generation::GameMode;
+
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 enum CursorDirection {
     Vertical,
@@ -70,7 +72,7 @@ impl<'a> Default for App<'a> {
             widgets: Widgets {
                 mode: CycleButton::with_states(vec![
                     "Mode: Direct".to_string(),
-                    "Mode: Doubles".to_string(),
+                    "Mode: Teams".to_string(),
                 ]),
                 stocks: NumberEntryButton::new("Stocks: ", 4, ""),
                 time: NumberEntryButton::new("Time: ", 8, " minutes"),
@@ -93,7 +95,7 @@ impl<'a> Default for App<'a> {
                     "Items",
                     melee::default_items()
                         .iter()
-                        .map(|stage| stage.checkbox.clone())
+                        .map(|item| item.checkbox.clone())
                         .collect(),
                 ),
             },
@@ -122,8 +124,8 @@ impl<'a> App<'a> {
 
         let main_layout = Layout::vertical(vec![
             Constraint::Length(3),
-            Constraint::Percentage(70),
-            Constraint::Percentage(30),
+            Constraint::Percentage(60),
+            Constraint::Percentage(40),
         ])
         .split(block.inner(frame.area()));
 
@@ -195,7 +197,22 @@ impl<'a> App<'a> {
     }
 
     fn update_output(&mut self) {
+        let mut mode = GameMode::Direct;
+        if self.widgets.mode.current_state == 1 {
+            mode = GameMode::Doubles;
+        }
+
+        let item_frequency = match self.widgets.item_frequency.current_state {
+            1 => code_generation::ItemFrequency::VeryLow,
+            2 => code_generation::ItemFrequency::Low,
+            3 => code_generation::ItemFrequency::Medium,
+            4 => code_generation::ItemFrequency::High,
+            5 => code_generation::ItemFrequency::VeryHigh,
+            _ => code_generation::ItemFrequency::None,
+        };
+
         self.output_data = code_generation::generate(
+            mode,
             self.widgets
                 .stages
                 .entries
@@ -203,6 +220,17 @@ impl<'a> App<'a> {
                 .enumerate()
                 .map(|(index, entry)| code_generation::Bit {
                     pos: melee::default_stages()[index].bit,
+                    state: entry.checked,
+                })
+                .collect(),
+            item_frequency,
+            self.widgets
+                .items
+                .entries
+                .iter()
+                .enumerate()
+                .map(|(index, entry)| code_generation::Bit {
+                    pos: melee::default_items()[index].bit,
                     state: entry.checked,
                 })
                 .collect(),
