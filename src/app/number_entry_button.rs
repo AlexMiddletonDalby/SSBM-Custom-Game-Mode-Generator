@@ -10,6 +10,7 @@ pub struct NumberEntryButton<'a> {
     pub suffix: String,
     pub selected: bool,
     pub editing: bool,
+    pub zero_text: Option<String>,
 
     editor: TextArea<'a>,
 }
@@ -28,7 +29,7 @@ fn is_numeric(key: KeyCode) -> bool {
 }
 
 impl<'a> NumberEntryButton<'a> {
-    pub fn new(prefix: &str, value: u8, suffix: &str) -> Self {
+    pub fn new(prefix: &str, value: u8, suffix: &str, zero_text: Option<String>) -> Self {
         let mut s = Self {
             prefix: prefix.to_owned(),
             value,
@@ -36,6 +37,7 @@ impl<'a> NumberEntryButton<'a> {
             selected: false,
             editing: false,
             editor: TextArea::default(),
+            zero_text,
         };
 
         s.editor.set_placeholder_text("Enter a value");
@@ -51,7 +53,9 @@ impl<'a> NumberEntryButton<'a> {
     fn exit_edit_mode(&mut self) {
         if let Some(line) = self.editor.lines().first().clone() {
             if let Ok(val) = line.parse::<u8>() {
-                self.value = val;
+                if val != 0 || self.zero_text.is_some() {
+                    self.value = val;
+                }
             }
         }
 
@@ -96,20 +100,34 @@ impl<'a> NumberEntryButton<'a> {
 
         return false;
     }
+
+    fn render_editor(&self, area: Rect, buf: &mut Buffer) {
+        self.editor.render(area, buf);
+    }
+
+    fn render_label(&self, area: Rect, buf: &mut Buffer) {
+        let mut text = self.prefix.clone() + &self.value.to_string() + &self.suffix;
+        if let Some(zero_text) = self.zero_text.clone()
+            && self.value == 0
+        {
+            text = self.prefix.clone() + &zero_text;
+        }
+
+        let p = Paragraph::new(text).style(if self.selected {
+            Style::default().bg(Color::DarkGray)
+        } else {
+            Style::default()
+        });
+        p.render(area, buf);
+    }
 }
 
 impl<'a> Widget for &NumberEntryButton<'a> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         if self.editing {
-            self.editor.render(area, buf);
+            self.render_editor(area, buf);
         } else {
-            let p = Paragraph::new(self.prefix.clone() + &self.value.to_string() + &self.suffix)
-                .style(if self.selected {
-                    Style::default().bg(Color::DarkGray)
-                } else {
-                    Style::default()
-                });
-            p.render(area, buf);
+            self.render_label(area, buf);
         }
     }
 }

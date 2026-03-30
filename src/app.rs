@@ -74,8 +74,8 @@ impl<'a> Default for App<'a> {
                     "Mode: Direct".to_string(),
                     "Mode: Teams".to_string(),
                 ]),
-                stocks: NumberEntryButton::new("Stocks: ", 4, ""),
-                time: NumberEntryButton::new("Time: ", 8, " minutes"),
+                stocks: NumberEntryButton::new("Stocks: ", 4, "", None),
+                time: NumberEntryButton::new("Time: ", 8, " minutes", Some("None".to_string())),
                 item_frequency: CycleButton::with_states(vec![
                     "Items: None".to_string(),
                     "Items: Very Low".to_string(),
@@ -197,10 +197,29 @@ impl<'a> App<'a> {
     }
 
     fn update_output(&mut self) {
-        let mut mode = GameMode::Direct;
-        if self.widgets.mode.current_state == 1 {
-            mode = GameMode::Doubles;
-        }
+        let mode = match self.widgets.mode.current_state {
+            1 => GameMode::Doubles,
+            _ => GameMode::Direct,
+        };
+
+        let stocks = self.widgets.stocks.value;
+
+        let time_limit: Option<u8> = match self.widgets.time.value {
+            0 => None,
+            limit => Some(limit),
+        };
+
+        let stages: Vec<code_generation::Bit> = self
+            .widgets
+            .stages
+            .entries
+            .iter()
+            .enumerate()
+            .map(|(index, entry)| code_generation::Bit {
+                pos: melee::default_stages()[index].bit,
+                state: entry.checked,
+            })
+            .collect();
 
         let item_frequency = match self.widgets.item_frequency.current_state {
             1 => code_generation::ItemFrequency::VeryLow,
@@ -211,31 +230,20 @@ impl<'a> App<'a> {
             _ => code_generation::ItemFrequency::None,
         };
 
-        self.output_data = code_generation::generate(
-            mode,
-            self.widgets.stocks.value,
-            self.widgets
-                .stages
-                .entries
-                .iter()
-                .enumerate()
-                .map(|(index, entry)| code_generation::Bit {
-                    pos: melee::default_stages()[index].bit,
-                    state: entry.checked,
-                })
-                .collect(),
-            item_frequency,
-            self.widgets
-                .items
-                .entries
-                .iter()
-                .enumerate()
-                .map(|(index, entry)| code_generation::Bit {
-                    pos: melee::default_items()[index].bit,
-                    state: entry.checked,
-                })
-                .collect(),
-        );
+        let items: Vec<code_generation::Bit> = self
+            .widgets
+            .items
+            .entries
+            .iter()
+            .enumerate()
+            .map(|(index, entry)| code_generation::Bit {
+                pos: melee::default_items()[index].bit,
+                state: entry.checked,
+            })
+            .collect();
+
+        self.output_data =
+            code_generation::generate(mode, stocks, time_limit, stages, item_frequency, items);
     }
 
     fn increment_cursor(&mut self) {
