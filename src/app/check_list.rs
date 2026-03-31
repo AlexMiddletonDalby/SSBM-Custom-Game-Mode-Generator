@@ -51,7 +51,9 @@ impl CheckList {
 
 impl Widget for &CheckList {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let block = Block::bordered().title(self.title.clone());
+        let block = Block::bordered()
+            .title(self.title.clone())
+            .border_style(Style::new().add_modifier(Modifier::ITALIC));
         let widgets: Vec<Checkbox> = self
             .entries
             .iter()

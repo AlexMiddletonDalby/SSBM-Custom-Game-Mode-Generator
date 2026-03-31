@@ -1,17 +1,20 @@
 mod check_list;
 mod code_generation;
 mod cycle_button;
+mod export_options;
 mod melee;
 mod number_entry_button;
 
 use check_list::CheckList;
 use cycle_button::CycleButton;
+use export_options::ExportOptionsPopup;
 use number_entry_button::NumberEntryButton;
 
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::DefaultTerminal;
 use ratatui::prelude::*;
 use ratatui::widgets::Block;
+use ratatui::widgets::Clear;
 use ratatui::widgets::Padding;
 use ratatui::widgets::Paragraph;
 use std::cmp;
@@ -50,6 +53,7 @@ struct Widgets<'a> {
     item_frequency: CycleButton,
     stages: CheckList,
     items: CheckList,
+    export_options: ExportOptionsPopup<'a>,
 }
 
 #[derive(Debug)]
@@ -57,6 +61,7 @@ pub struct App<'a> {
     output_data: String,
     cursor_section: Section,
     cursor_pos: usize,
+    showing_export_popup: bool,
     exit: bool,
 
     widgets: Widgets<'a>,
@@ -68,6 +73,7 @@ impl<'a> Default for App<'a> {
             output_data: String::new(),
             cursor_section: Section::GameOptions,
             cursor_pos: 0,
+            showing_export_popup: false,
             exit: false,
             widgets: Widgets {
                 mode: CycleButton::with_states(vec![
@@ -98,6 +104,7 @@ impl<'a> Default for App<'a> {
                         .map(|item| item.checkbox.clone())
                         .collect(),
                 ),
+                export_options: ExportOptionsPopup::new(),
             },
         }
     }
@@ -120,17 +127,24 @@ impl<'a> App<'a> {
         let block = Block::bordered()
             .title("SSBM Custom Game Mode Generator v0.1")
             .title_alignment(HorizontalAlignment::Center)
-            .padding(Padding::symmetric(2, 1));
+            .border_style(Style::new().add_modifier(Modifier::ITALIC))
+            .padding(Padding::symmetric(1, 0))
+            .style(if self.showing_export_popup {
+                Style::default().add_modifier(Modifier::DIM)
+            } else {
+                Style::default()
+            });
 
         let main_layout = Layout::vertical(vec![
             Constraint::Length(3),
-            Constraint::Percentage(60),
-            Constraint::Percentage(40),
+            Constraint::Fill(1),
+            Constraint::Length(3),
         ])
         .split(block.inner(frame.area()));
 
         let game_options_block = Block::bordered()
             .title("Game options")
+            .border_style(Style::new().add_modifier(Modifier::ITALIC))
             .title_alignment(HorizontalAlignment::Left);
 
         let game_options = Layout::horizontal(vec![
@@ -146,8 +160,16 @@ impl<'a> App<'a> {
             Layout::horizontal(vec![Constraint::Percentage(50), Constraint::Percentage(50)])
                 .split(main_layout[1]);
 
-        let output =
-            Paragraph::new(self.output_data.clone()).block(Block::bordered().title("Output"));
+        let generate_button = Paragraph::new("< Generate Code >")
+            .alignment(HorizontalAlignment::Center)
+            .block(Block::bordered().border_style(Style::default().dark_gray()));
+
+        let action_buttons = Layout::horizontal(vec![
+            Constraint::Fill(1),
+            Constraint::Length(21),
+            Constraint::Fill(1),
+        ])
+        .split(main_layout[2]);
 
         frame.render_widget(block, frame.area());
         frame.render_widget(game_options_block, main_layout[0]);
@@ -157,7 +179,16 @@ impl<'a> App<'a> {
         frame.render_widget(&self.widgets.item_frequency, game_options[3]);
         frame.render_widget(&self.widgets.stages, stages_and_items[0]);
         frame.render_widget(&self.widgets.items, stages_and_items[1]);
-        frame.render_widget(output, main_layout[2]);
+        frame.render_widget(generate_button, action_buttons[1]);
+
+        if self.showing_export_popup {
+            let popup = frame
+                .area()
+                .centered(Constraint::Percentage(80), Constraint::Length(10));
+
+            frame.render_widget(Clear, popup);
+            frame.render_widget(&self.widgets.export_options, popup);
+        }
     }
 
     fn quit(&mut self) {
@@ -306,6 +337,7 @@ impl<'a> App<'a> {
                     }
                 },
                 KeyCode::Char('q') => self.quit(),
+                KeyCode::Char('p') => self.showing_export_popup = !self.showing_export_popup,
                 key => {
                     let mut handled: bool = false;
                     match self.cursor_section {
