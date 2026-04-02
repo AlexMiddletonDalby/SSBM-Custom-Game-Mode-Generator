@@ -50,11 +50,13 @@ impl<'a> NumberEntryButton<'a> {
         self.editing = true;
     }
 
-    fn exit_edit_mode(&mut self) {
-        if let Some(line) = self.editor.lines().first().clone() {
-            if let Ok(val) = line.parse::<u8>() {
-                if val != 0 || self.zero_text.is_some() {
-                    self.value = val;
+    fn exit_edit_mode(&mut self, commit: bool) {
+        if commit {
+            if let Some(line) = self.editor.lines().first().clone() {
+                if let Ok(val) = line.parse::<u8>() {
+                    if val != 0 || self.zero_text.is_some() {
+                        self.value = val;
+                    }
                 }
             }
         }
@@ -73,28 +75,34 @@ impl<'a> NumberEntryButton<'a> {
     pub fn handle_key_press(&mut self, key: KeyCode) -> bool {
         if key == KeyCode::Enter || key == KeyCode::Char(' ') {
             if self.editing {
-                self.exit_edit_mode();
+                self.exit_edit_mode(true);
             } else {
                 self.enter_edit_mode();
             }
             return true;
         }
-        if is_numeric(key) && self.editor_has_space() {
-            self.editor.input(Input {
-                key: Key::Char(key.as_char().unwrap()),
-                ctrl: false,
-                alt: false,
-                shift: false,
-            });
-            return true;
-        }
-        if key == KeyCode::Backspace {
-            self.editor.input(Input {
-                key: Key::Backspace,
-                ctrl: false,
-                alt: false,
-                shift: false,
-            });
+        if self.editing {
+            if is_numeric(key) && self.editor_has_space() {
+                self.editor.input(Input {
+                    key: Key::Char(key.as_char().unwrap()),
+                    ctrl: false,
+                    alt: false,
+                    shift: false,
+                });
+            }
+            if key == KeyCode::Backspace {
+                self.editor.input(Input {
+                    key: Key::Backspace,
+                    ctrl: false,
+                    alt: false,
+                    shift: false,
+                });
+            }
+
+            if key == KeyCode::Esc {
+                self.exit_edit_mode(false);
+            }
+
             return true;
         }
 

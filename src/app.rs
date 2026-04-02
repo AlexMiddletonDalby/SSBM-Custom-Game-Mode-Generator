@@ -1,13 +1,15 @@
+mod action_button;
 mod check_list;
 mod code_generation;
 mod cycle_button;
-mod export_options;
+mod export_popup;
 mod melee;
 mod number_entry_button;
 
+use action_button::ActionButton;
 use check_list::CheckList;
 use cycle_button::CycleButton;
-use export_options::ExportOptionsPopup;
+use export_popup::ExportPopup;
 use number_entry_button::NumberEntryButton;
 
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
@@ -16,7 +18,6 @@ use ratatui::prelude::*;
 use ratatui::widgets::Block;
 use ratatui::widgets::Clear;
 use ratatui::widgets::Padding;
-use ratatui::widgets::Paragraph;
 use std::cmp;
 use std::io;
 
@@ -29,10 +30,13 @@ enum CursorDirection {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-enum Section {
+pub enum Section {
     GameOptions,
     Stages,
     Items,
+    Footer,
+    ExportOptions,
+    ExportFooter,
 }
 
 impl Section {
@@ -41,6 +45,9 @@ impl Section {
             Self::GameOptions => CursorDirection::Horizontal,
             Self::Stages => CursorDirection::Vertical,
             Self::Items => CursorDirection::Vertical,
+            Self::Footer => CursorDirection::Horizontal,
+            Self::ExportOptions => CursorDirection::Vertical,
+            Self::ExportFooter => CursorDirection::Horizontal,
         }
     }
 }
@@ -53,7 +60,8 @@ struct Widgets<'a> {
     item_frequency: CycleButton,
     stages: CheckList,
     items: CheckList,
-    export_options: ExportOptionsPopup<'a>,
+    export_popup: ExportPopup<'a>,
+    generate_button: ActionButton,
 }
 
 #[derive(Debug)]
@@ -104,7 +112,8 @@ impl<'a> Default for App<'a> {
                         .map(|item| item.checkbox.clone())
                         .collect(),
                 ),
-                export_options: ExportOptionsPopup::new(),
+                export_popup: ExportPopup::new(),
+                generate_button: ActionButton::new("< Generate Code >"),
             },
         }
     }
@@ -160,10 +169,6 @@ impl<'a> App<'a> {
             Layout::horizontal(vec![Constraint::Percentage(50), Constraint::Percentage(50)])
                 .split(main_layout[1]);
 
-        let generate_button = Paragraph::new("< Generate Code >")
-            .alignment(HorizontalAlignment::Center)
-            .block(Block::bordered().border_style(Style::default().dark_gray()));
-
         let action_buttons = Layout::horizontal(vec![
             Constraint::Fill(1),
             Constraint::Length(21),
@@ -179,7 +184,7 @@ impl<'a> App<'a> {
         frame.render_widget(&self.widgets.item_frequency, game_options[3]);
         frame.render_widget(&self.widgets.stages, stages_and_items[0]);
         frame.render_widget(&self.widgets.items, stages_and_items[1]);
-        frame.render_widget(generate_button, action_buttons[1]);
+        frame.render_widget(&self.widgets.generate_button, action_buttons[1]);
 
         if self.showing_export_popup {
             let popup = frame
@@ -187,7 +192,7 @@ impl<'a> App<'a> {
                 .centered(Constraint::Percentage(80), Constraint::Length(10));
 
             frame.render_widget(Clear, popup);
-            frame.render_widget(&self.widgets.export_options, popup);
+            frame.render_widget(&self.widgets.export_popup, popup);
         }
     }
 
@@ -200,6 +205,9 @@ impl<'a> App<'a> {
             Section::GameOptions => 4,
             Section::Stages => self.widgets.stages.entries.len(),
             Section::Items => self.widgets.items.entries.len(),
+            Section::Footer => 1,
+            Section::ExportOptions => 3,
+            Section::ExportFooter => 2,
         }
     }
 
@@ -224,6 +232,14 @@ impl<'a> App<'a> {
 
         for (index, entry) in self.widgets.items.entries.iter_mut().enumerate() {
             entry.selected = self.cursor_section == Section::Items && index == self.cursor_pos;
+        }
+
+        self.widgets.generate_button.selected = self.cursor_section == Section::Footer;
+
+        if self.showing_export_popup {
+            self.widgets
+                .export_popup
+                .update_selection(self.cursor_pos, self.cursor_section);
         }
     }
 
@@ -291,74 +307,142 @@ impl<'a> App<'a> {
         }
     }
 
-    fn handle_keys(&mut self, key_event: KeyEvent) {
-        if key_event.kind == KeyEventKind::Press {
-            match key_event.code {
-                KeyCode::Up => match self.cursor_section.direction() {
-                    CursorDirection::Vertical => {
-                        if self.cursor_pos == 0 {
+    fn update_cursor(&mut self, key_event: KeyEvent) {
+        match key_event.code {
+            KeyCode::Up => match self.cursor_section.direction() {
+                CursorDirection::Vertical => {
+                    if self.cursor_pos == 0 {
+                        if self.cursor_section == Section::Stages
+                            || self.cursor_section == Section::Items
+                        {
                             self.cursor_section = Section::GameOptions;
                             self.update_selection();
-                        } else {
-                            self.decrement_cursor();
                         }
+                    } else {
+                        self.decrement_cursor();
                     }
-                    CursorDirection::Horizontal => {}
-                },
-                KeyCode::Down => match self.cursor_section.direction() {
-                    CursorDirection::Vertical => {
+                }
+                CursorDirection::Horizontal => {
+                    if self.cursor_section == Section::Footer {
+                        self.cursor_section = Section::Items;
+                        self.cursor_pos = self.current_section_rows() - 1;
+                        self.update_selection();
+                    } else if self.cursor_section == Section::ExportFooter {
+                        self.cursor_section = Section::ExportOptions;
+                        self.cursor_pos = self.current_section_rows() - 1;
+                        self.update_selection();
+                    }
+                }
+            },
+            KeyCode::Down => match self.cursor_section.direction() {
+                CursorDirection::Vertical => {
+                    if self.cursor_pos >= (self.current_section_rows() - 1) {
+                        if self.cursor_section == Section::Stages
+                            || self.cursor_section == Section::Items
+                        {
+                            self.cursor_section = Section::Footer;
+                            self.update_selection();
+                        } else if self.cursor_section == Section::ExportOptions {
+                            self.cursor_section = Section::ExportFooter;
+                            self.update_selection();
+                        }
+                    } else {
                         self.increment_cursor();
                     }
-                    CursorDirection::Horizontal => {
+                }
+                CursorDirection::Horizontal => {
+                    if self.cursor_section == Section::GameOptions {
+                        self.cursor_section = Section::Stages;
+                        self.cursor_pos = 0;
+                        self.update_selection();
+                    }
+                }
+            },
+            KeyCode::Left => match self.cursor_section.direction() {
+                CursorDirection::Vertical => {
+                    if self.cursor_section == Section::Items {
                         self.cursor_section = Section::Stages;
                         self.update_selection();
                     }
-                },
-                KeyCode::Left => match self.cursor_section.direction() {
-                    CursorDirection::Vertical => {
-                        if self.cursor_section == Section::Items {
-                            self.cursor_section = Section::Stages;
-                            self.update_selection();
-                        }
-                    }
-                    CursorDirection::Horizontal => {
-                        self.decrement_cursor();
-                    }
-                },
-                KeyCode::Right => match self.cursor_section.direction() {
-                    CursorDirection::Vertical => {
-                        if self.cursor_section == Section::Stages {
-                            self.cursor_section = Section::Items;
-                            self.update_selection();
-                        }
-                    }
-                    CursorDirection::Horizontal => {
-                        self.increment_cursor();
-                    }
-                },
-                KeyCode::Char('q') => self.quit(),
-                KeyCode::Char('p') => self.showing_export_popup = !self.showing_export_popup,
-                key => {
-                    let mut handled: bool = false;
-                    match self.cursor_section {
-                        Section::GameOptions => match self.cursor_pos {
-                            0 => handled = self.widgets.mode.handle_key_press(key),
-                            1 => handled = self.widgets.stocks.handle_key_press(key),
-                            2 => handled = self.widgets.time.handle_key_press(key),
-                            3 => handled = self.widgets.item_frequency.handle_key_press(key),
-                            _ => {}
-                        },
-                        Section::Stages => {
-                            handled = self.widgets.stages.handle_key_press(key, self.cursor_pos);
-                        }
-                        Section::Items => {
-                            handled = self.widgets.items.handle_key_press(key, self.cursor_pos);
-                        }
-                    }
-                    if handled {
-                        self.update_output();
+                }
+                CursorDirection::Horizontal => {
+                    self.decrement_cursor();
+                }
+            },
+            KeyCode::Right => match self.cursor_section.direction() {
+                CursorDirection::Vertical => {
+                    if self.cursor_section == Section::Stages {
+                        self.cursor_section = Section::Items;
+                        self.update_selection();
                     }
                 }
+                CursorDirection::Horizontal => {
+                    self.increment_cursor();
+                }
+            },
+            _ => {}
+        }
+    }
+
+    fn handle_keys(&mut self, key_event: KeyEvent) {
+        if key_event.kind == KeyEventKind::Press {
+            let key = key_event.code;
+            let mut handled: bool = false;
+            match self.cursor_section {
+                Section::GameOptions => {
+                    match self.cursor_pos {
+                        0 => handled = self.widgets.mode.handle_key_press(key),
+                        1 => handled = self.widgets.stocks.handle_key_press(key),
+                        2 => handled = self.widgets.time.handle_key_press(key),
+                        3 => handled = self.widgets.item_frequency.handle_key_press(key),
+                        _ => {}
+                    };
+                    if handled {
+                        self.update_output()
+                    };
+                }
+                Section::Stages => {
+                    handled = self.widgets.stages.handle_key_press(key, self.cursor_pos);
+                    if handled {
+                        self.update_output()
+                    };
+                }
+                Section::Items => {
+                    handled = self.widgets.items.handle_key_press(key, self.cursor_pos);
+                    if handled {
+                        self.update_output()
+                    };
+                }
+                Section::Footer => {
+                    if key == KeyCode::Char(' ') || key == KeyCode::Enter {
+                        self.showing_export_popup = !self.showing_export_popup;
+                        self.cursor_section = Section::ExportOptions;
+                        self.cursor_pos = 0;
+                        self.update_selection();
+                        handled = true;
+                    }
+                }
+                Section::ExportOptions => {
+                    handled = self.widgets.export_popup.handle_key_press(key_event);
+                }
+                Section::ExportFooter => {}
+            }
+            if !handled {
+                if self.showing_export_popup && key == KeyCode::Esc {
+                    self.showing_export_popup = false;
+                    self.cursor_section = Section::Footer;
+                    self.cursor_pos = 0;
+                    self.update_selection();
+                    handled = true;
+                }
+                if key == KeyCode::Char('q') {
+                    self.quit();
+                    handled = true;
+                }
+            }
+
+            if !handled {
+                self.update_cursor(key_event);
             }
         }
     }
