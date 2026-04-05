@@ -1,3 +1,4 @@
+use crossterm::event::KeyCode;
 use ratatui::prelude::*;
 use ratatui::widgets::{Block, Paragraph, Widget};
 
@@ -7,12 +8,21 @@ pub struct ActionButton {
     pub text: String,
 }
 
-impl ActionButton {
+impl<'a> ActionButton {
     pub fn new(text: &str) -> Self {
         Self {
             selected: false,
             text: text.to_string(),
         }
+    }
+
+    pub fn handle_key_press(&mut self, code: KeyCode, mut on_press: impl FnMut()) -> bool {
+        if code == KeyCode::Char(' ') || code == KeyCode::Enter {
+            on_press();
+            return true;
+        }
+
+        return false;
     }
 }
 

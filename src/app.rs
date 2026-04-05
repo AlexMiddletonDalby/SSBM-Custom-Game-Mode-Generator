@@ -53,6 +53,12 @@ impl Section {
 }
 
 #[derive(Debug)]
+struct Cursor {
+    section: Section,
+    pos: usize,
+}
+
+#[derive(Debug)]
 struct Widgets<'a> {
     mode: CycleButton,
     stocks: NumberEntryButton<'a>,
@@ -60,15 +66,14 @@ struct Widgets<'a> {
     item_frequency: CycleButton,
     stages: CheckList,
     items: CheckList,
-    export_popup: ExportPopup<'a>,
     generate_button: ActionButton,
+    export_popup: ExportPopup<'a>,
 }
 
 #[derive(Debug)]
 pub struct App<'a> {
     output_data: String,
-    cursor_section: Section,
-    cursor_pos: usize,
+    cursor: Cursor,
     showing_export_popup: bool,
     exit: bool,
 
@@ -79,8 +84,10 @@ impl<'a> Default for App<'a> {
     fn default() -> Self {
         App {
             output_data: String::new(),
-            cursor_section: Section::GameOptions,
-            cursor_pos: 0,
+            cursor: Cursor {
+                section: Section::GameOptions,
+                pos: 0,
+            },
             showing_export_popup: false,
             exit: false,
             widgets: Widgets {
@@ -112,8 +119,8 @@ impl<'a> Default for App<'a> {
                         .map(|item| item.checkbox.clone())
                         .collect(),
                 ),
-                export_popup: ExportPopup::new(),
                 generate_button: ActionButton::new("< Generate Code >"),
+                export_popup: ExportPopup::new(),
             },
         }
     }
@@ -189,7 +196,7 @@ impl<'a> App<'a> {
         if self.showing_export_popup {
             let popup = frame
                 .area()
-                .centered(Constraint::Percentage(80), Constraint::Length(10));
+                .centered(Constraint::Percentage(80), Constraint::Length(13));
 
             frame.render_widget(Clear, popup);
             frame.render_widget(&self.widgets.export_popup, popup);
@@ -201,7 +208,7 @@ impl<'a> App<'a> {
     }
 
     fn current_section_rows(&self) -> usize {
-        match self.cursor_section {
+        match self.cursor.section {
             Section::GameOptions => 4,
             Section::Stages => self.widgets.stages.entries.len(),
             Section::Items => self.widgets.items.entries.len(),
@@ -212,34 +219,34 @@ impl<'a> App<'a> {
     }
 
     fn update_selection(&mut self) {
-        self.cursor_pos = cmp::min(self.cursor_pos, self.current_section_rows() - 1);
+        self.cursor.pos = cmp::min(self.cursor.pos, self.current_section_rows() - 1);
 
         self.widgets.mode.selected =
-            self.cursor_section == Section::GameOptions && self.cursor_pos == 0;
+            self.cursor.section == Section::GameOptions && self.cursor.pos == 0;
 
         self.widgets.stocks.selected =
-            self.cursor_section == Section::GameOptions && self.cursor_pos == 1;
+            self.cursor.section == Section::GameOptions && self.cursor.pos == 1;
 
         self.widgets.time.selected =
-            self.cursor_section == Section::GameOptions && self.cursor_pos == 2;
+            self.cursor.section == Section::GameOptions && self.cursor.pos == 2;
 
         self.widgets.item_frequency.selected =
-            self.cursor_section == Section::GameOptions && self.cursor_pos == 3;
+            self.cursor.section == Section::GameOptions && self.cursor.pos == 3;
 
         for (index, entry) in self.widgets.stages.entries.iter_mut().enumerate() {
-            entry.selected = self.cursor_section == Section::Stages && index == self.cursor_pos;
+            entry.selected = self.cursor.section == Section::Stages && index == self.cursor.pos;
         }
 
         for (index, entry) in self.widgets.items.entries.iter_mut().enumerate() {
-            entry.selected = self.cursor_section == Section::Items && index == self.cursor_pos;
+            entry.selected = self.cursor.section == Section::Items && index == self.cursor.pos;
         }
 
-        self.widgets.generate_button.selected = self.cursor_section == Section::Footer;
+        self.widgets.generate_button.selected = self.cursor.section == Section::Footer;
 
         if self.showing_export_popup {
             self.widgets
                 .export_popup
-                .update_selection(self.cursor_pos, self.cursor_section);
+                .update_selection(self.cursor.pos, self.cursor.section);
         }
     }
 
@@ -294,86 +301,78 @@ impl<'a> App<'a> {
     }
 
     fn increment_cursor(&mut self) {
-        if self.cursor_pos < self.current_section_rows() - 1 {
-            self.cursor_pos += 1;
+        if self.cursor.pos < self.current_section_rows() - 1 {
+            self.cursor.pos += 1;
             self.update_selection();
         }
     }
 
     fn decrement_cursor(&mut self) {
-        if self.cursor_pos > 0 {
-            self.cursor_pos -= 1;
+        if self.cursor.pos > 0 {
+            self.cursor.pos -= 1;
             self.update_selection();
         }
     }
 
     fn update_cursor(&mut self, key_event: KeyEvent) {
         match key_event.code {
-            KeyCode::Up => match self.cursor_section.direction() {
+            KeyCode::Up => match self.cursor.section.direction() {
                 CursorDirection::Vertical => {
-                    if self.cursor_pos == 0 {
-                        if self.cursor_section == Section::Stages
-                            || self.cursor_section == Section::Items
+                    if self.cursor.pos == 0 {
+                        if self.cursor.section == Section::Stages
+                            || self.cursor.section == Section::Items
                         {
-                            self.cursor_section = Section::GameOptions;
-                            self.update_selection();
+                            self.cursor.section = Section::GameOptions;
                         }
                     } else {
                         self.decrement_cursor();
                     }
                 }
                 CursorDirection::Horizontal => {
-                    if self.cursor_section == Section::Footer {
-                        self.cursor_section = Section::Items;
-                        self.cursor_pos = self.current_section_rows() - 1;
-                        self.update_selection();
-                    } else if self.cursor_section == Section::ExportFooter {
-                        self.cursor_section = Section::ExportOptions;
-                        self.cursor_pos = self.current_section_rows() - 1;
-                        self.update_selection();
+                    if self.cursor.section == Section::Footer {
+                        self.cursor.section = Section::Items;
+                        self.cursor.pos = self.current_section_rows() - 1;
+                    } else if self.cursor.section == Section::ExportFooter {
+                        self.cursor.section = Section::ExportOptions;
+                        self.cursor.pos = self.current_section_rows() - 1;
                     }
                 }
             },
-            KeyCode::Down => match self.cursor_section.direction() {
+            KeyCode::Down => match self.cursor.section.direction() {
                 CursorDirection::Vertical => {
-                    if self.cursor_pos >= (self.current_section_rows() - 1) {
-                        if self.cursor_section == Section::Stages
-                            || self.cursor_section == Section::Items
+                    if self.cursor.pos >= (self.current_section_rows() - 1) {
+                        if self.cursor.section == Section::Stages
+                            || self.cursor.section == Section::Items
                         {
-                            self.cursor_section = Section::Footer;
-                            self.update_selection();
-                        } else if self.cursor_section == Section::ExportOptions {
-                            self.cursor_section = Section::ExportFooter;
-                            self.update_selection();
+                            self.cursor.section = Section::Footer;
+                        } else if self.cursor.section == Section::ExportOptions {
+                            self.cursor.section = Section::ExportFooter;
                         }
                     } else {
                         self.increment_cursor();
                     }
                 }
                 CursorDirection::Horizontal => {
-                    if self.cursor_section == Section::GameOptions {
-                        self.cursor_section = Section::Stages;
-                        self.cursor_pos = 0;
-                        self.update_selection();
+                    if self.cursor.section == Section::GameOptions {
+                        self.cursor.section = Section::Stages;
+                        self.cursor.pos = 0;
                     }
                 }
             },
-            KeyCode::Left => match self.cursor_section.direction() {
+            KeyCode::Left => match self.cursor.section.direction() {
                 CursorDirection::Vertical => {
-                    if self.cursor_section == Section::Items {
-                        self.cursor_section = Section::Stages;
-                        self.update_selection();
+                    if self.cursor.section == Section::Items {
+                        self.cursor.section = Section::Stages;
                     }
                 }
                 CursorDirection::Horizontal => {
                     self.decrement_cursor();
                 }
             },
-            KeyCode::Right => match self.cursor_section.direction() {
+            KeyCode::Right => match self.cursor.section.direction() {
                 CursorDirection::Vertical => {
-                    if self.cursor_section == Section::Stages {
-                        self.cursor_section = Section::Items;
-                        self.update_selection();
+                    if self.cursor.section == Section::Stages {
+                        self.cursor.section = Section::Items;
                     }
                 }
                 CursorDirection::Horizontal => {
@@ -388,9 +387,9 @@ impl<'a> App<'a> {
         if key_event.kind == KeyEventKind::Press {
             let key = key_event.code;
             let mut handled: bool = false;
-            match self.cursor_section {
+            match self.cursor.section {
                 Section::GameOptions => {
-                    match self.cursor_pos {
+                    match self.cursor.pos {
                         0 => handled = self.widgets.mode.handle_key_press(key),
                         1 => handled = self.widgets.stocks.handle_key_press(key),
                         2 => handled = self.widgets.time.handle_key_press(key),
@@ -402,37 +401,49 @@ impl<'a> App<'a> {
                     };
                 }
                 Section::Stages => {
-                    handled = self.widgets.stages.handle_key_press(key, self.cursor_pos);
+                    handled = self.widgets.stages.handle_key_press(key, self.cursor.pos);
                     if handled {
                         self.update_output()
                     };
                 }
                 Section::Items => {
-                    handled = self.widgets.items.handle_key_press(key, self.cursor_pos);
+                    handled = self.widgets.items.handle_key_press(key, self.cursor.pos);
                     if handled {
                         self.update_output()
                     };
                 }
                 Section::Footer => {
-                    if key == KeyCode::Char(' ') || key == KeyCode::Enter {
-                        self.showing_export_popup = !self.showing_export_popup;
-                        self.cursor_section = Section::ExportOptions;
-                        self.cursor_pos = 0;
-                        self.update_selection();
-                        handled = true;
-                    }
+                    handled = self.widgets.generate_button.handle_key_press(key, || {
+                        self.showing_export_popup = true;
+                        self.cursor.section = Section::ExportOptions;
+                        self.cursor.pos = 0;
+                    });
                 }
                 Section::ExportOptions => {
-                    handled = self.widgets.export_popup.handle_key_press(key_event);
+                    handled = self
+                        .widgets
+                        .export_popup
+                        .handle_options_key_press(key_event);
                 }
-                Section::ExportFooter => {}
+                Section::ExportFooter => {
+                    let handle_back_pressed = || {
+                        self.showing_export_popup = false;
+                        self.cursor.section = Section::Footer;
+                        self.cursor.pos = 0;
+                    };
+                    let handle_generate_pressed = || {};
+                    handled = self.widgets.export_popup.handle_footer_key_press(
+                        key,
+                        handle_back_pressed,
+                        handle_generate_pressed,
+                    );
+                }
             }
             if !handled {
                 if self.showing_export_popup && key == KeyCode::Esc {
                     self.showing_export_popup = false;
-                    self.cursor_section = Section::Footer;
-                    self.cursor_pos = 0;
-                    self.update_selection();
+                    self.cursor.section = Section::Footer;
+                    self.cursor.pos = 0;
                     handled = true;
                 }
                 if key == KeyCode::Char('q') {
@@ -444,6 +455,8 @@ impl<'a> App<'a> {
             if !handled {
                 self.update_cursor(key_event);
             }
+
+            self.update_selection();
         }
     }
 
