@@ -344,18 +344,34 @@ impl<'a> App<'a> {
             entry.selected = self.cursor.is_on(Section::Items, index);
         }
 
-        self.main_view.generate.selected = self.cursor.is_on(Section::Footer, 0);
+        self.main_view
+            .generate
+            .set_selected(self.cursor.is_on(Section::Footer, 0));
 
         let export_popup = &mut self.main_view.export_popup;
         export_popup.name.selected = self.cursor.is_on(Section::ExportOptions, 0);
         export_popup.description.selected = self.cursor.is_on(Section::ExportOptions, 1);
         export_popup.author.selected = self.cursor.is_on(Section::ExportOptions, 2);
-        export_popup.back.selected = self.cursor.is_on(Section::ExportFooter, 0);
-        export_popup.confirm.selected = self.cursor.is_on(Section::ExportFooter, 1);
 
-        self.results_view.copy.selected = self.cursor.is_on(Section::ResultsScreenFooter, 0);
-        self.results_view.start_again.selected = self.cursor.is_on(Section::ResultsScreenFooter, 1);
-        self.results_view.quit.selected = self.cursor.is_on(Section::ResultsScreenFooter, 2);
+        export_popup
+            .back
+            .set_selected(self.cursor.is_on(Section::ExportFooter, 0));
+
+        export_popup
+            .confirm
+            .set_selected(self.cursor.is_on(Section::ExportFooter, 1));
+
+        self.results_view
+            .copy
+            .set_selected(self.cursor.is_on(Section::ResultsScreenFooter, 0));
+
+        self.results_view
+            .start_again
+            .set_selected(self.cursor.is_on(Section::ResultsScreenFooter, 1));
+
+        self.results_view
+            .quit
+            .set_selected(self.cursor.is_on(Section::ResultsScreenFooter, 2));
     }
 
     fn update_code(&mut self) {
@@ -558,7 +574,7 @@ impl<'a> App<'a> {
                     }
                 }
                 Section::ExportFooter => {
-                    if self.main_view.export_popup.back.selected {
+                    if self.main_view.export_popup.back.selected() {
                         handled = self.main_view.export_popup.back.handle_key_press(key, || {
                             self.showing_export_popup = false;
                             self.cursor = Cursor {
@@ -567,7 +583,7 @@ impl<'a> App<'a> {
                             };
                         });
                     }
-                    if self.main_view.export_popup.confirm.selected {
+                    if self.main_view.export_popup.confirm.selected() {
                         handled = self
                             .main_view
                             .export_popup
@@ -583,12 +599,12 @@ impl<'a> App<'a> {
                     }
                 }
                 Section::ResultsScreenFooter => {
-                    if self.results_view.copy.selected {
+                    if self.results_view.copy.selected() {
                         handled = self.results_view.copy.handle_key_press(key, || {
                             self.clipboard.set_text(&self.code).unwrap();
                         });
                     }
-                    if self.results_view.start_again.selected {
+                    if self.results_view.start_again.selected() {
                         handled = self.results_view.start_again.handle_key_press(key, || {
                             self.showing_results_screen = false;
                             self.showing_export_popup = false;
@@ -598,7 +614,7 @@ impl<'a> App<'a> {
                             }
                         });
                     }
-                    if self.results_view.quit.selected {
+                    if self.results_view.quit.selected() {
                         handled = self.results_view.quit.handle_key_press(key, || {
                             self.exit = true;
                         });

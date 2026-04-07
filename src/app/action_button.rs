@@ -4,18 +4,18 @@ use ratatui::widgets::{Block, Paragraph, Widget};
 
 #[derive(Debug)]
 pub struct ActionButton {
-    pub selected: bool,
     pub text: String,
     pub pressed_text: Option<String>,
+    selected: bool,
     has_been_pressed: bool,
 }
 
 impl<'a> ActionButton {
     pub fn new(text: &str) -> Self {
         Self {
-            selected: false,
             text: text.to_string(),
             pressed_text: None,
+            selected: false,
             has_been_pressed: false,
         }
     }
@@ -37,6 +37,17 @@ impl<'a> ActionButton {
         }
 
         return false;
+    }
+
+    pub fn selected(&self) -> bool {
+        self.selected
+    }
+
+    pub fn set_selected(&mut self, selected: bool) {
+        self.selected = selected;
+        if !self.selected {
+            self.has_been_pressed = false;
+        }
     }
 
     fn get_text(&self) -> String {
