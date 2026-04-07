@@ -12,6 +12,7 @@ use cycle_button::CycleButton;
 use labelled_text_area::LabelledTextArea;
 use number_entry_button::NumberEntryButton;
 
+use arboard::Clipboard;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::DefaultTerminal;
 use ratatui::prelude::*;
@@ -95,12 +96,12 @@ struct ResultsView {
     quit: ActionButton,
 }
 
-#[derive(Debug)]
 pub struct App<'a> {
     cursor: Cursor,
     showing_export_popup: bool,
     showing_results_screen: bool,
     code: String,
+    clipboard: Clipboard,
     exit: bool,
     main_view: MainView<'a>,
     results_view: ResultsView,
@@ -116,6 +117,7 @@ impl<'a> Default for App<'a> {
             showing_export_popup: false,
             showing_results_screen: false,
             code: String::new(),
+            clipboard: Clipboard::new().unwrap(),
             exit: false,
             main_view: MainView {
                 mode: CycleButton::with_states(vec![
@@ -159,8 +161,8 @@ impl<'a> Default for App<'a> {
                 },
             },
             results_view: ResultsView {
-                copy: ActionButton::new("Copy to clipboard"),
-                start_again: ActionButton::new("Start again"),
+                copy: ActionButton::with_pressed_text("Copy to clipboard", "Copied!"),
+                start_again: ActionButton::new("Back to config"),
                 quit: ActionButton::new("Quit"),
             },
         }
@@ -580,7 +582,28 @@ impl<'a> App<'a> {
                             });
                     }
                 }
-                Section::ResultsScreenFooter => {}
+                Section::ResultsScreenFooter => {
+                    if self.results_view.copy.selected {
+                        handled = self.results_view.copy.handle_key_press(key, || {
+                            self.clipboard.set_text(&self.code).unwrap();
+                        });
+                    }
+                    if self.results_view.start_again.selected {
+                        handled = self.results_view.start_again.handle_key_press(key, || {
+                            self.showing_results_screen = false;
+                            self.showing_export_popup = false;
+                            self.cursor = Cursor {
+                                section: Section::GameOptions,
+                                pos: 0,
+                            }
+                        });
+                    }
+                    if self.results_view.quit.selected {
+                        handled = self.results_view.quit.handle_key_press(key, || {
+                            self.exit = true;
+                        });
+                    }
+                }
             }
             if !handled {
                 if self.showing_export_popup && key == KeyCode::Esc {

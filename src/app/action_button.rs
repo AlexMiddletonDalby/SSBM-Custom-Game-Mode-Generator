@@ -6,6 +6,8 @@ use ratatui::widgets::{Block, Paragraph, Widget};
 pub struct ActionButton {
     pub selected: bool,
     pub text: String,
+    pub pressed_text: Option<String>,
+    has_been_pressed: bool,
 }
 
 impl<'a> ActionButton {
@@ -13,22 +15,44 @@ impl<'a> ActionButton {
         Self {
             selected: false,
             text: text.to_string(),
+            pressed_text: None,
+            has_been_pressed: false,
+        }
+    }
+
+    pub fn with_pressed_text(text: &str, pressed_text: &str) -> Self {
+        Self {
+            selected: false,
+            text: text.to_string(),
+            pressed_text: Some(pressed_text.to_string()),
+            has_been_pressed: false,
         }
     }
 
     pub fn handle_key_press(&mut self, code: KeyCode, mut on_press: impl FnMut()) -> bool {
         if code == KeyCode::Char(' ') || code == KeyCode::Enter {
             on_press();
+            self.has_been_pressed = true;
             return true;
         }
 
         return false;
     }
+
+    fn get_text(&self) -> String {
+        if let Some(text) = &self.pressed_text {
+            if self.has_been_pressed {
+                return text.clone();
+            }
+        }
+
+        return self.text.clone();
+    }
 }
 
 impl Widget for &ActionButton {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let p = Paragraph::new(self.text.clone())
+        let p = Paragraph::new(self.get_text())
             .style(if self.selected {
                 Style::default().bg(Color::DarkGray)
             } else {
