@@ -7,7 +7,7 @@ use ratatui_textarea::TextArea;
 pub struct LabelledTextArea<'a> {
     label: String,
     placeholder: String,
-    value: String,
+    pub value: String,
     pub selected: bool,
     pub editing: bool,
     editor: TextArea<'a>,

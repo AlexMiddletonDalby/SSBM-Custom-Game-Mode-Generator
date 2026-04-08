@@ -150,12 +150,9 @@ impl<'a> Default for App<'a> {
                 ),
                 generate: ActionButton::new("< Generate Code >"),
                 export_popup: ExportPopup {
-                    name: LabelledTextArea::new("Name: ", "My Custom mode"),
-                    description: LabelledTextArea::new(
-                        "Description: ",
-                        "Fox only, no items, Final Destination",
-                    ),
-                    author: LabelledTextArea::new("Author: ", "John Melee"),
+                    name: LabelledTextArea::new("Name: ", "[required]"),
+                    author: LabelledTextArea::new("Author: ", "[required]"),
+                    description: LabelledTextArea::new("Description: ", "[optional]"),
                     back: ActionButton::new("Back"),
                     confirm: ActionButton::new("Confirm"),
                 },
@@ -173,6 +170,8 @@ impl<'a> App<'a> {
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
         self.update_selection();
         self.update_code();
+        self.update_confirm_button_enablement();
+        self.update_items_section_enablement();
 
         while !self.exit {
             terminal.draw(|frame| self.draw(frame))?;
@@ -258,8 +257,8 @@ impl<'a> App<'a> {
             frame.render_widget(Clear, popup);
             frame.render_widget(popup_block, popup);
             frame.render_widget(&self.main_view.export_popup.name, layout[0]);
-            frame.render_widget(&self.main_view.export_popup.description, layout[1]);
-            frame.render_widget(&self.main_view.export_popup.author, layout[2]);
+            frame.render_widget(&self.main_view.export_popup.author, layout[1]);
+            frame.render_widget(&self.main_view.export_popup.description, layout[2]);
             frame.render_widget(&self.main_view.export_popup.back, footer[1]);
             frame.render_widget(&self.main_view.export_popup.confirm, footer[2]);
         }
@@ -350,8 +349,8 @@ impl<'a> App<'a> {
 
         let export_popup = &mut self.main_view.export_popup;
         export_popup.name.selected = self.cursor.is_on(Section::ExportOptions, 0);
-        export_popup.description.selected = self.cursor.is_on(Section::ExportOptions, 1);
-        export_popup.author.selected = self.cursor.is_on(Section::ExportOptions, 2);
+        export_popup.author.selected = self.cursor.is_on(Section::ExportOptions, 1);
+        export_popup.description.selected = self.cursor.is_on(Section::ExportOptions, 2);
 
         export_popup
             .back
@@ -375,6 +374,16 @@ impl<'a> App<'a> {
     }
 
     fn update_code(&mut self) {
+        let metadata = code_generation::Metadata {
+            name: self.main_view.export_popup.name.value.clone(),
+            author: self.main_view.export_popup.author.value.clone(),
+            description: if !self.main_view.export_popup.description.value.is_empty() {
+                Some(self.main_view.export_popup.description.value.clone())
+            } else {
+                None
+            },
+        };
+
         let mode = match self.main_view.mode.current_state {
             1 => GameMode::Doubles,
             _ => GameMode::Direct,
@@ -420,8 +429,28 @@ impl<'a> App<'a> {
             })
             .collect();
 
-        self.code =
-            code_generation::generate(mode, stocks, time_limit, stages, item_frequency, items);
+        self.code = code_generation::generate(
+            metadata,
+            mode,
+            stocks,
+            time_limit,
+            stages,
+            item_frequency,
+            items,
+        );
+    }
+
+    fn update_confirm_button_enablement(&mut self) {
+        let name_entered = !self.main_view.export_popup.name.value.is_empty();
+        let author_entered = !self.main_view.export_popup.author.value.is_empty();
+        self.main_view
+            .export_popup
+            .confirm
+            .set_enabled(name_entered && author_entered);
+    }
+
+    fn update_items_section_enablement(&mut self) {
+        self.main_view.items.enabled = self.main_view.item_frequency.current_state != 0;
     }
 
     fn increment_cursor(&mut self) {
@@ -454,15 +483,11 @@ impl<'a> App<'a> {
                 }
                 CursorDirection::Horizontal => {
                     if self.cursor.section == Section::Footer {
-                        self.cursor = Cursor {
-                            section: Section::Items,
-                            pos: self.current_section_rows() - 1,
-                        };
+                        self.cursor.section = Section::Stages;
+                        self.cursor.pos = self.current_section_rows() - 1;
                     } else if self.cursor.section == Section::ExportFooter {
-                        self.cursor = Cursor {
-                            section: Section::ExportOptions,
-                            pos: self.current_section_rows() - 1,
-                        };
+                        self.cursor.section = Section::ExportOptions;
+                        self.cursor.pos = self.current_section_rows() - 1;
                     }
                 }
             },
@@ -473,8 +498,14 @@ impl<'a> App<'a> {
                             || self.cursor.section == Section::Items
                         {
                             self.cursor.section = Section::Footer;
+                            self.cursor.pos = 0;
                         } else if self.cursor.section == Section::ExportOptions {
                             self.cursor.section = Section::ExportFooter;
+                            self.cursor.pos = if self.main_view.export_popup.confirm.enabled() {
+                                1
+                            } else {
+                                0
+                            };
                         }
                     } else {
                         self.increment_cursor();
@@ -501,12 +532,18 @@ impl<'a> App<'a> {
             },
             KeyCode::Right => match self.cursor.section.direction() {
                 CursorDirection::Vertical => {
-                    if self.cursor.section == Section::Stages {
+                    if self.cursor.section == Section::Stages && self.main_view.items.enabled {
                         self.cursor.section = Section::Items;
                     }
                 }
                 CursorDirection::Horizontal => {
-                    self.increment_cursor();
+                    if self.cursor.section == Section::ExportFooter {
+                        if self.main_view.export_popup.confirm.enabled() {
+                            self.increment_cursor();
+                        }
+                    } else {
+                        self.increment_cursor();
+                    }
                 }
             },
             _ => {}
@@ -527,7 +564,8 @@ impl<'a> App<'a> {
                         _ => {}
                     };
                     if handled {
-                        self.update_code()
+                        self.update_code();
+                        self.update_items_section_enablement();
                     };
                 }
                 Section::Stages => {
@@ -550,6 +588,7 @@ impl<'a> App<'a> {
                             pos: 0,
                         };
                     });
+                    self.update_confirm_button_enablement();
                 }
                 Section::ExportOptions => {
                     if self.main_view.export_popup.name.selected {
@@ -571,6 +610,7 @@ impl<'a> App<'a> {
                     }
                     if handled {
                         self.update_code();
+                        self.update_confirm_button_enablement();
                     }
                 }
                 Section::ExportFooter => {

@@ -28,6 +28,7 @@ impl CheckboxEntry {
 pub struct CheckList {
     pub title: String,
     pub entries: Vec<CheckboxEntry>,
+    pub enabled: bool,
 }
 
 impl CheckList {
@@ -35,6 +36,7 @@ impl CheckList {
         Self {
             title: title.to_owned(),
             entries,
+            enabled: true,
         }
     }
 
@@ -53,6 +55,11 @@ impl Widget for &CheckList {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let block = Block::bordered()
             .title(self.title.clone())
+            .style(if self.enabled {
+                Style::default()
+            } else {
+                Style::default().add_modifier(Modifier::DIM)
+            })
             .border_style(Style::new().add_modifier(Modifier::ITALIC));
         let widgets: Vec<Checkbox> = self
             .entries

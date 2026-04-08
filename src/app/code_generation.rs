@@ -1,6 +1,10 @@
 use bit_vec::BitVec;
 
-const STOCKS_CODE_TEMPLATE: &str = "C216E91C 0000000F # Stocks
+const METADATA_TEMPLATE: &str = "${1} [{2}]";
+
+const WATERMARK: &str = "#Generated with ssbm-custom-game-mode-generator | AlexMD =)";
+
+const STOCKS_CODE_TEMPLATE: &str = "C216E91C 0000000F
 3CE08048 80E79D30
 54E7443E 2C070208
 4082005C 886DAFA0
@@ -36,7 +40,7 @@ const NO_TIME_LIMIT_TEMPLATE: &str = "C216E750 00000008
 92540000 3C808017
 60000000 00000000";
 
-const STAGE_CODE_TEMPLATE: &str = "C22668BC 00000009 # Stages
+const STAGE_CODE_TEMPLATE: &str = "C22668BC 00000009
 88EDAFA0 2C07000{1}
 41820008 4082001C
 3E208045 6231C370
@@ -47,7 +51,7 @@ const STAGE_CODE_TEMPLATE: &str = "C22668BC 00000009 # Stages
 92110018 48000004
 60000000 00000000";
 
-const ITEMS_CODE_TEMPLATE: &str = "C216E774 0000000B # items
+const ITEMS_CODE_TEMPLATE: &str = "C216E774 0000000B
 3CE08048 80E79D30
 54E7443E 2C070208
 4082003C 88EDAFA0
@@ -63,6 +67,12 @@ const ITEMS_CODE_TEMPLATE: &str = "C216E774 0000000B # items
 fn to_hex(val: &str, len: usize) -> String {
     let n: u32 = u32::from_str_radix(val, 2).unwrap();
     format!("{:01$X}", n, len)
+}
+
+pub struct Metadata {
+    pub name: String,
+    pub author: String,
+    pub description: Option<String>,
 }
 
 pub enum GameMode {
@@ -107,6 +117,7 @@ pub struct Bit {
 }
 
 pub fn generate(
+    metadata: Metadata,
     game_mode: GameMode,
     stocks: u8,
     time_limit: Option<u8>,
@@ -114,6 +125,15 @@ pub fn generate(
     item_frequency: ItemFrequency,
     items: Vec<Bit>,
 ) -> String {
+    let mut metadata_code = METADATA_TEMPLATE
+        .replace("{1}", &metadata.name)
+        .replace("{2}", &metadata.author);
+    if let Some(description) = metadata.description {
+        metadata_code.push_str("\n");
+        metadata_code.push_str("*");
+        metadata_code.push_str(&description);
+    }
+
     let game_mode_val = game_mode.val().to_string();
     let mut stages_bitset = BitVec::from_elem(32, false);
 
@@ -154,5 +174,15 @@ pub fn generate(
             .replace("{3}", &to_hex(&items_bitset.to_string(), 8));
     }
 
-    return stocks_code + "\n" + &time_limit_code + "\n" + &stage_code + "\n" + &items_code;
+    return metadata_code
+        + "\n"
+        + WATERMARK
+        + "\n"
+        + &stocks_code
+        + "\n"
+        + &time_limit_code
+        + "\n"
+        + &stage_code
+        + "\n"
+        + &items_code;
 }
