@@ -6,6 +6,14 @@ pub struct Entry {
     pub checkbox: CheckboxEntry,
 }
 
+pub fn default_stocks() -> u8 {
+    4
+}
+
+pub fn default_time() -> u8 {
+    8
+}
+
 // Stage bitfield indices as defined from left to right in 32 bit space
 pub fn default_stages() -> Vec<Entry> {
     vec![

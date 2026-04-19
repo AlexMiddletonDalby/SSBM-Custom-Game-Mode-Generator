@@ -124,8 +124,13 @@ impl<'a> Default for App<'a> {
                     "Mode: Direct".to_string(),
                     "Mode: Teams".to_string(),
                 ]),
-                stocks: NumberEntryButton::new("Stocks: ", 4, "", None),
-                time: NumberEntryButton::new("Time: ", 8, " minutes", Some("None".to_string())),
+                stocks: NumberEntryButton::new("Stocks: ", melee::default_stocks(), "", None),
+                time: NumberEntryButton::new(
+                    "Time: ",
+                    melee::default_time(),
+                    " minutes",
+                    Some("None".to_string()),
+                ),
                 item_frequency: CycleButton::with_states(vec![
                     "Items: None".to_string(),
                     "Items: Very Low".to_string(),
@@ -170,6 +175,7 @@ impl<'a> App<'a> {
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
         self.update_selection();
         self.update_code();
+        self.update_generate_button_enablement();
         self.update_confirm_button_enablement();
         self.update_items_section_enablement();
 
@@ -373,8 +379,8 @@ impl<'a> App<'a> {
             .set_selected(self.cursor.is_on(Section::ResultsScreenFooter, 2));
     }
 
-    fn update_code(&mut self) {
-        let metadata = code_generation::Metadata {
+    fn get_metadata(&self) -> code_generation::Metadata {
+        code_generation::Metadata {
             name: self.main_view.export_popup.name.value.clone(),
             author: self.main_view.export_popup.author.value.clone(),
             description: if !self.main_view.export_popup.description.value.is_empty() {
@@ -382,22 +388,29 @@ impl<'a> App<'a> {
             } else {
                 None
             },
-        };
+        }
+    }
 
-        let mode = match self.main_view.mode.current_state {
+    fn get_game_mode(&self) -> GameMode {
+        match self.main_view.mode.current_state {
             1 => GameMode::Doubles,
             _ => GameMode::Direct,
-        };
+        }
+    }
 
-        let stocks = self.main_view.stocks.value;
+    fn get_stocks(&self) -> u8 {
+        self.main_view.stocks.value
+    }
 
-        let time_limit: Option<u8> = match self.main_view.time.value {
+    fn get_time_limit(&self) -> Option<u8> {
+        match self.main_view.time.value {
             0 => None,
             limit => Some(limit),
-        };
+        }
+    }
 
-        let stages: Vec<code_generation::Bit> = self
-            .main_view
+    fn get_stages(&self) -> Vec<code_generation::Bit> {
+        self.main_view
             .stages
             .entries
             .iter()
@@ -406,19 +419,11 @@ impl<'a> App<'a> {
                 pos: melee::default_stages()[index].bit,
                 state: entry.checked,
             })
-            .collect();
+            .collect()
+    }
 
-        let item_frequency = match self.main_view.item_frequency.current_state {
-            1 => code_generation::ItemFrequency::VeryLow,
-            2 => code_generation::ItemFrequency::Low,
-            3 => code_generation::ItemFrequency::Medium,
-            4 => code_generation::ItemFrequency::High,
-            5 => code_generation::ItemFrequency::VeryHigh,
-            _ => code_generation::ItemFrequency::None,
-        };
-
-        let items: Vec<code_generation::Bit> = self
-            .main_view
+    fn get_items(&self) -> Vec<code_generation::Bit> {
+        self.main_view
             .items
             .entries
             .iter()
@@ -427,17 +432,41 @@ impl<'a> App<'a> {
                 pos: melee::default_items()[index].bit,
                 state: entry.checked,
             })
-            .collect();
+            .collect()
+    }
 
+    fn get_item_frequency(&self) -> code_generation::ItemFrequency {
+        match self.main_view.item_frequency.current_state {
+            1 => code_generation::ItemFrequency::VeryLow,
+            2 => code_generation::ItemFrequency::Low,
+            3 => code_generation::ItemFrequency::Medium,
+            4 => code_generation::ItemFrequency::High,
+            5 => code_generation::ItemFrequency::VeryHigh,
+            _ => code_generation::ItemFrequency::None,
+        }
+    }
+
+    fn update_code(&mut self) {
         self.code = code_generation::generate(
-            metadata,
-            mode,
-            stocks,
-            time_limit,
-            stages,
-            item_frequency,
-            items,
+            self.get_metadata(),
+            self.get_game_mode(),
+            self.get_stocks(),
+            self.get_time_limit(),
+            self.get_stages(),
+            self.get_item_frequency(),
+            self.get_items(),
         );
+    }
+
+    fn update_generate_button_enablement(&mut self) {
+        self.main_view
+            .generate
+            .set_enabled(code_generation::can_be_generated(
+                self.get_stocks(),
+                self.get_time_limit(),
+                self.get_stages(),
+                self.get_item_frequency(),
+            ));
     }
 
     fn update_confirm_button_enablement(&mut self) {
@@ -497,8 +526,10 @@ impl<'a> App<'a> {
                         if self.cursor.section == Section::Stages
                             || self.cursor.section == Section::Items
                         {
-                            self.cursor.section = Section::Footer;
-                            self.cursor.pos = 0;
+                            if self.main_view.generate.enabled() {
+                                self.cursor.section = Section::Footer;
+                                self.cursor.pos = 0;
+                            }
                         } else if self.cursor.section == Section::ExportOptions {
                             self.cursor.section = Section::ExportFooter;
                             self.cursor.pos = if self.main_view.export_popup.confirm.enabled() {
@@ -566,18 +597,21 @@ impl<'a> App<'a> {
                     if handled {
                         self.update_code();
                         self.update_items_section_enablement();
+                        self.update_generate_button_enablement();
                     };
                 }
                 Section::Stages => {
                     handled = self.main_view.stages.handle_key_press(key, self.cursor.pos);
                     if handled {
-                        self.update_code()
+                        self.update_code();
+                        self.update_generate_button_enablement();
                     };
                 }
                 Section::Items => {
                     handled = self.main_view.items.handle_key_press(key, self.cursor.pos);
                     if handled {
-                        self.update_code()
+                        self.update_code();
+                        self.update_generate_button_enablement();
                     };
                 }
                 Section::Footer => {
