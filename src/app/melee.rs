@@ -6,6 +6,7 @@ pub struct Entry {
     pub checkbox: CheckboxEntry,
 }
 
+// Stage bitfield indices as defined from left to right in 32 bit space
 pub fn default_stages() -> Vec<Entry> {
     vec![
         Entry {
@@ -127,130 +128,131 @@ pub fn default_stages() -> Vec<Entry> {
     ]
 }
 
+// Item bitfield indices as defined from left to right in 64 bit space (as there are more than 32 items)
 pub fn default_items() -> Vec<Entry> {
     vec![
         Entry {
-            bit: 5,
+            bit: 45,
             checkbox: CheckboxEntry::new("Food", true),
         },
         Entry {
-            bit: 18,
+            bit: 54,
             checkbox: CheckboxEntry::new("Maxim Tomato", true),
         },
         Entry {
-            bit: 10,
+            bit: 55,
             checkbox: CheckboxEntry::new("Heart Container", true),
         },
         Entry {
-            bit: 30,
+            bit: 34,
             checkbox: CheckboxEntry::new("Warp Star", true),
         },
         Entry {
-            bit: 13,
+            bit: 47,
             checkbox: CheckboxEntry::new("Ray Gun", true),
         },
         Entry {
-            bit: 24,
+            bit: 42,
             checkbox: CheckboxEntry::new("Super Scope", true),
         },
         Entry {
-            bit: 3,
+            bit: 38,
             checkbox: CheckboxEntry::new("Fire Flower", true),
         },
         Entry {
-            bit: 14,
+            bit: 40,
             checkbox: CheckboxEntry::new("Lip's Stick", true),
         },
         Entry {
-            bit: 23,
+            bit: 41,
             checkbox: CheckboxEntry::new("Star Rod", true),
         },
         Entry {
-            bit: 27,
+            bit: 51,
             checkbox: CheckboxEntry::new("Beam Sword", true),
         },
         Entry {
-            bit: 1,
+            bit: 52,
             checkbox: CheckboxEntry::new("Home-Run Bat", true),
         },
         Entry {
-            bit: 9,
+            bit: 39,
             checkbox: CheckboxEntry::new("Fan", true),
         },
         Entry {
-            bit: 8,
+            bit: 35,
             checkbox: CheckboxEntry::new("Hammer", true),
         },
         Entry {
-            bit: 7,
+            bit: 49,
             checkbox: CheckboxEntry::new("Green Shell", true),
         },
         Entry {
-            bit: 21,
+            bit: 48,
             checkbox: CheckboxEntry::new("Red Shell", true),
         },
         Entry {
-            bit: 4,
+            bit: 43,
             checkbox: CheckboxEntry::new("Flipper", true),
         },
         Entry {
-            bit: 6,
+            bit: 46,
             checkbox: CheckboxEntry::new("Freezie", true),
         },
         Entry {
-            bit: 2,
+            bit: 56,
             checkbox: CheckboxEntry::new("Mr. Saturn", true),
         },
         Entry {
-            bit: 15,
+            bit: 29,
             checkbox: CheckboxEntry::new("Poke Ball", true),
         },
         Entry {
-            bit: 0,
+            bit: 57,
             checkbox: CheckboxEntry::new("Bob-omb", true),
         },
         Entry {
-            bit: 17,
+            bit: 44,
             checkbox: CheckboxEntry::new("Motion-Sensor Bomb", true),
         },
         Entry {
-            bit: 11,
+            bit: 37,
             checkbox: CheckboxEntry::new("Super Mushroom", true),
         },
         Entry {
-            bit: 31,
+            bit: 36,
             checkbox: CheckboxEntry::new("Poison Mushroom", true),
         },
         Entry {
-            bit: 26,
+            bit: 53,
             checkbox: CheckboxEntry::new("Starman", true),
         },
         Entry {
-            bit: 20,
+            bit: 50,
             checkbox: CheckboxEntry::new("Parasol", true),
         },
         Entry {
-            bit: 25,
+            bit: 33,
             checkbox: CheckboxEntry::new("Screw Attack", true),
         },
         Entry {
-            bit: 16,
+            bit: 31,
             checkbox: CheckboxEntry::new("Metal Box", true),
         },
         Entry {
-            bit: 22,
+            bit: 32,
             checkbox: CheckboxEntry::new("Bunny Hood", true),
         },
         Entry {
-            bit: 19,
+            bit: 30,
             checkbox: CheckboxEntry::new("Cloaking Device", true),
         },
         Entry {
-            bit: 29,
+            bit: 58,
             checkbox: CheckboxEntry::new("Barrel Cannon", true),
         },
         Entry {
-            bit: 12,
+            bit: 59,
             checkbox: CheckboxEntry::new("Party Ball", true),
         },
     ]

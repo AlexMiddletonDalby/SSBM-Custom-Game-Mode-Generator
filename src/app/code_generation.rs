@@ -60,8 +60,8 @@ const ITEMS_CODE_TEMPLATE: &str = "C216E774 0000000B
 7C8802A6 80640000
 907F0020 80640004
 907F0024 48000004
-4E800021 FFFFFFFF
-{3} C022A8C8
+4E800021 {3}
+{4} C022A8C8
 60000000 00000000";
 
 fn to_hex(val: &str, len: usize) -> String {
@@ -163,15 +163,21 @@ pub fn generate(
 
     let mut items_code = String::new();
     if let Ok(item_frequency_val) = item_frequency.val() {
-        let mut items_bitset = BitVec::from_elem(32, true);
+        let mut items_bitset1 = BitVec::from_elem(32, true);
+        let mut items_bitset2 = BitVec::from_elem(32, true);
         for entry in items {
-            items_bitset.set(entry.pos, entry.state);
+            if entry.pos < 32 {
+                items_bitset1.set(entry.pos, entry.state);
+            } else {
+                items_bitset2.set(entry.pos - 32, entry.state);
+            }
         }
 
         items_code = ITEMS_CODE_TEMPLATE
             .replace("{1}", &game_mode_val)
             .replace("{2}", &item_frequency_val.to_string())
-            .replace("{3}", &to_hex(&items_bitset.to_string(), 8));
+            .replace("{3}", &to_hex(&items_bitset1.to_string(), 8))
+            .replace("{4}", &to_hex(&items_bitset2.to_string(), 8));
     }
 
     return metadata_code
