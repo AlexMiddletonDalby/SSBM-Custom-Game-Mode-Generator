@@ -73,7 +73,7 @@ impl<'a> NumberEntryButton<'a> {
     }
 
     pub fn handle_key_press(&mut self, key: KeyCode) -> bool {
-        if key == KeyCode::Enter || key == KeyCode::Char(' ') {
+        if key == KeyCode::Char(' ') || key == KeyCode::Enter {
             if self.editing {
                 self.exit_edit_mode(true);
             } else {

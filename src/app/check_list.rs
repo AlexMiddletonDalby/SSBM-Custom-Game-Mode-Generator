@@ -41,13 +41,18 @@ impl CheckList {
     }
 
     pub fn handle_key_press(&mut self, key: KeyCode, cursor_pos: usize) -> bool {
-        match key {
-            KeyCode::Char(' ') => {
-                self.entries[cursor_pos].flip();
-                return true;
-            }
-            _ => return false,
+        if key == KeyCode::Char(' ') || key == KeyCode::Enter {
+            self.entries[cursor_pos].flip();
+            return true;
         }
+        if key == KeyCode::Char('a') {
+            let all_checked = self.entries.iter().all(|entry| entry.checked);
+            for entry in &mut self.entries {
+                entry.checked = !all_checked
+            }
+        }
+
+        return false;
     }
 }
 

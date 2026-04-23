@@ -19,16 +19,15 @@ impl CycleButton {
     }
 
     pub fn handle_key_press(&mut self, code: KeyCode) -> bool {
-        match code {
-            KeyCode::Char(' ') => {
-                self.current_state = self.current_state + 1;
-                if self.current_state >= self.states.len() {
-                    self.current_state = 0;
-                }
-                return true;
+        if code == KeyCode::Char(' ') || code == KeyCode::Enter {
+            self.current_state = self.current_state + 1;
+            if self.current_state >= self.states.len() {
+                self.current_state = 0;
             }
-            _ => return false,
+            return true;
         }
+
+        return false;
     }
 }
 

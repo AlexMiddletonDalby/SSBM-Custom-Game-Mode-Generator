@@ -295,10 +295,16 @@ impl<'a> App<'a> {
     }
 
     fn draw(&mut self, frame: &mut Frame) {
+        let instructions = if self.showing_results_screen {
+            " (← →) - Navigate | (Space) - Select | (Q) - Quit "
+        } else {
+            " (←↑↓→) - Navigate | (Space) - Select | (A) - Select all | (Q) - Quit "
+        };
+
         let block = Block::bordered()
             .title("SSBM Custom Game Mode Generator v0.1")
+            .title_bottom(instructions)
             .title_alignment(HorizontalAlignment::Center)
-            .border_style(Style::new().add_modifier(Modifier::ITALIC))
             .padding(Padding::symmetric(1, 0))
             .style(if self.showing_export_popup {
                 Style::default().add_modifier(Modifier::DIM)
