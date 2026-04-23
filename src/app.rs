@@ -295,6 +295,12 @@ impl<'a> App<'a> {
     }
 
     fn draw(&mut self, frame: &mut Frame) {
+        let version_string = format!(
+            "v{}.{}",
+            env!("CARGO_PKG_VERSION_MAJOR"),
+            env!("CARGO_PKG_VERSION_MINOR")
+        );
+
         let instructions = if self.showing_results_screen {
             " (← →) - Navigate | (Space) - Select | (Q) - Quit "
         } else {
@@ -302,7 +308,10 @@ impl<'a> App<'a> {
         };
 
         let block = Block::bordered()
-            .title("SSBM Custom Game Mode Generator v0.1")
+            .title(format!(
+                "SSBM Custom Game Mode Generator {}",
+                version_string
+            ))
             .title_bottom(instructions)
             .title_alignment(HorizontalAlignment::Center)
             .padding(Padding::symmetric(1, 0))
