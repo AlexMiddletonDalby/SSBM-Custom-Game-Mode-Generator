@@ -50,6 +50,7 @@ impl CheckList {
             for entry in &mut self.entries {
                 entry.checked = !all_checked
             }
+            return true;
         }
 
         return false;
