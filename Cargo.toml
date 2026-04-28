@@ -2,6 +2,7 @@
 name = "ssbm-custom-game-mode-generator"
 version = "1.0.0"
 edition = "2024"
+repository = "https://github.com/AlexMiddletonDalby/SSBM-Custom-Game-Mode-Generator"
 
 [dependencies]
 bit-vec = "0.9.1"
@@ -10,3 +11,8 @@ ratatui = "0.30.0"
 ratatui-textarea = "0.8.0"
 tui-checkbox = "0.4.3"
 arboard = "3.6.1"
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
