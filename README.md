@@ -1,0 +1,27 @@
+# SSBM Custom Game Mode Generator
+`ssbm-custom-game-mode-generator` is a tool for creating custom game mode gecko codes for Slippi. Simply specify what options you would like to use (time, stocks, stages, items, etc), and the tool will generate a gecko code for that configuration:
+
+<img width="743" height="842" alt="a demo of the code generator" src="https://github.com/user-attachments/assets/95ca6897-32c4-4ce0-8c60-343f25eb261c" />
+
+## Features
+- Build any game mode you can think of- choose your stocks, time limit, items and stages
+- Generate codes for either Direct or Teams modes
+- Configure metadata for the code, including name, description and author. These will show up in Dolphin's UI!
+- Copy the created gecko code to the clipboard, ready to be pasted into the Dolphin config file
+- Lightweight command line tool, built in Rust
+- Easy to use TUI powered by [ratatui](https://ratatui.rs/)
+- Works on Windows, Mac, and Linux
+
+## How to use
+`ssbm-custom-game-mode-generator` is a command line tool, but it uses ratatui to show a simple, easy to use UI.
+
+Most users should just be able to download the pre-built binaries from the latest github release, and double click the executable to run it up in a terminal. From there, using the tool should be self explanatory (there are controls listed at the bottom). You may also be interested in checking out my [code](https://github.com/AlexMiddletonDalby/gecko-codes/blob/main/free-for-all-over-teams.ini) for playing free-for-all over Slippi Teams mode. These two projects together allow you to create pretty much any custom game mode you can think of!
+
+The download also includes a shell/powershell installer script which copies the executable to a sensible location and adds it to the PATH. If you run this, you should then be able to invoke it by name from the command line directly. This is useful if you plan to use the tool a lot, and would like to have it more permanently installed.
+
+If the pre-built binaries don't work for you (or you're just curious), you can also build the tool from source.
+
+## Building from source
+`ssbm-custom-game-mode-generator` is build in Rust, so building from source is as easy as cloning the repo, and doing `cargo build`.
+
+The project also uses cargo-dist to generate release bundles/tarballs, but you don't need to use that to get it running on your machine.
