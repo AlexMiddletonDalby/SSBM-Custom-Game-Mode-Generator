@@ -1,7 +1,7 @@
 use crate::app::check_list::CheckboxEntry;
 
 #[derive(Debug)]
-pub struct Entry {
+pub struct StageEntry {
     pub bit: usize,
     pub checkbox: CheckboxEntry,
 }
@@ -15,252 +15,290 @@ pub fn default_time() -> u8 {
 }
 
 // Stage bitfield indices as defined from left to right in 32 bit space
-pub fn default_stages() -> Vec<Entry> {
+pub fn default_stages() -> Vec<StageEntry> {
     vec![
-        Entry {
+        StageEntry {
             bit: 7,
             checkbox: CheckboxEntry::new("Battlefield", true),
         },
-        Entry {
+        StageEntry {
             bit: 11,
             checkbox: CheckboxEntry::new("Big Blue", false),
         },
-        Entry {
+        StageEntry {
             bit: 28,
             checkbox: CheckboxEntry::new("Brinstar", false),
         },
-        Entry {
+        StageEntry {
             bit: 16,
             checkbox: CheckboxEntry::new("Brinstar Depths", false),
         },
-        Entry {
+        StageEntry {
             bit: 25,
             checkbox: CheckboxEntry::new("Corneria", false),
         },
-        Entry {
+        StageEntry {
             bit: 5,
             checkbox: CheckboxEntry::new("Dream Land N64", true),
         },
-        Entry {
+        StageEntry {
             bit: 6,
             checkbox: CheckboxEntry::new("Final Destination", true),
         },
-        Entry {
+        StageEntry {
             bit: 8,
             checkbox: CheckboxEntry::new("Flat Zone", false),
         },
-        Entry {
+        StageEntry {
             bit: 26,
             checkbox: CheckboxEntry::new("Fountain of Dreams", true),
         },
-        Entry {
+        StageEntry {
             bit: 10,
             checkbox: CheckboxEntry::new("Fourside", false),
         },
-        Entry {
+        StageEntry {
             bit: 29,
             checkbox: CheckboxEntry::new("Great Bay", false),
         },
-        Entry {
+        StageEntry {
             bit: 14,
             checkbox: CheckboxEntry::new("Green Greens", false),
         },
-        Entry {
+        StageEntry {
             bit: 21,
             checkbox: CheckboxEntry::new("Icicle Mountain", false),
         },
-        Entry {
+        StageEntry {
             bit: 18,
             checkbox: CheckboxEntry::new("Jungle Japes", false),
         },
-        Entry {
+        StageEntry {
             bit: 30,
             checkbox: CheckboxEntry::new("Kongo Jungle", false),
         },
-        Entry {
+        StageEntry {
             bit: 3,
             checkbox: CheckboxEntry::new("Kongo Jungle N64", false),
         },
-        Entry {
+        StageEntry {
             bit: 20,
             checkbox: CheckboxEntry::new("Mushroom Kingdom", false),
         },
-        Entry {
+        StageEntry {
             bit: 9,
             checkbox: CheckboxEntry::new("Mushroom Kingdom II", false),
         },
-        Entry {
+        StageEntry {
             bit: 23,
             checkbox: CheckboxEntry::new("Mute City", false),
         },
-        Entry {
+        StageEntry {
             bit: 22,
             checkbox: CheckboxEntry::new("Onett", false),
         },
-        Entry {
+        StageEntry {
             bit: 12,
             checkbox: CheckboxEntry::new("Poke Floats", false),
         },
-        Entry {
+        StageEntry {
             bit: 24,
             checkbox: CheckboxEntry::new("Pokemon Stadium", true),
         },
-        Entry {
+        StageEntry {
             bit: 31,
             checkbox: CheckboxEntry::new("Princess Peach's Castle", false),
         },
-        Entry {
+        StageEntry {
             bit: 19,
             checkbox: CheckboxEntry::new("Rainbow Cruise", false),
         },
-        Entry {
+        StageEntry {
             bit: 17,
             checkbox: CheckboxEntry::new("Temple", false),
         },
-        Entry {
+        StageEntry {
             bit: 13,
             checkbox: CheckboxEntry::new("Venom", false),
         },
-        Entry {
+        StageEntry {
             bit: 15,
             checkbox: CheckboxEntry::new("Yoshi's Island", false),
         },
-        Entry {
+        StageEntry {
             bit: 4,
             checkbox: CheckboxEntry::new("Yoshi's Island N64", false),
         },
-        Entry {
+        StageEntry {
             bit: 27,
             checkbox: CheckboxEntry::new("Yoshi's Story", true),
         },
     ]
 }
 
-// Item bitfield indices as defined from left to right in 64 bit space (as there are more than 32 items)
-pub fn default_items() -> Vec<Entry> {
+#[derive(Debug)]
+pub struct ItemEntry {
+    pub field: usize,
+    pub bit: usize,
+    pub checkbox: CheckboxEntry,
+}
+
+// Item bitfield indices as defined from left to right (split into 5 8-bit fields)
+pub fn default_items() -> Vec<ItemEntry> {
     vec![
-        Entry {
-            bit: 45,
+        ItemEntry {
+            field: 3,
+            bit: 5,
             checkbox: CheckboxEntry::new("Food", true),
         },
-        Entry {
-            bit: 54,
+        ItemEntry {
+            field: 4,
+            bit: 6,
             checkbox: CheckboxEntry::new("Maxim Tomato", true),
         },
-        Entry {
-            bit: 55,
+        ItemEntry {
+            field: 4,
+            bit: 7,
             checkbox: CheckboxEntry::new("Heart Container", true),
         },
-        Entry {
-            bit: 34,
+        ItemEntry {
+            field: 2,
+            bit: 2,
             checkbox: CheckboxEntry::new("Warp Star", true),
         },
-        Entry {
-            bit: 47,
+        ItemEntry {
+            field: 3,
+            bit: 7,
             checkbox: CheckboxEntry::new("Ray Gun", true),
         },
-        Entry {
-            bit: 42,
+        ItemEntry {
+            field: 3,
+            bit: 2,
             checkbox: CheckboxEntry::new("Super Scope", true),
         },
-        Entry {
-            bit: 38,
+        ItemEntry {
+            field: 2,
+            bit: 6,
             checkbox: CheckboxEntry::new("Fire Flower", true),
         },
-        Entry {
-            bit: 40,
+        ItemEntry {
+            field: 3,
+            bit: 0,
             checkbox: CheckboxEntry::new("Lip's Stick", true),
         },
-        Entry {
-            bit: 41,
+        ItemEntry {
+            field: 3,
+            bit: 1,
             checkbox: CheckboxEntry::new("Star Rod", true),
         },
-        Entry {
-            bit: 51,
+        ItemEntry {
+            field: 4,
+            bit: 3,
             checkbox: CheckboxEntry::new("Beam Sword", true),
         },
-        Entry {
-            bit: 52,
+        ItemEntry {
+            field: 4,
+            bit: 4,
             checkbox: CheckboxEntry::new("Home-Run Bat", true),
         },
-        Entry {
-            bit: 39,
+        ItemEntry {
+            field: 2,
+            bit: 7,
             checkbox: CheckboxEntry::new("Fan", true),
         },
-        Entry {
-            bit: 35,
+        ItemEntry {
+            field: 2,
+            bit: 3,
             checkbox: CheckboxEntry::new("Hammer", true),
         },
-        Entry {
-            bit: 49,
+        ItemEntry {
+            field: 4,
+            bit: 1,
             checkbox: CheckboxEntry::new("Green Shell", true),
         },
-        Entry {
-            bit: 48,
+        ItemEntry {
+            field: 4,
+            bit: 0,
             checkbox: CheckboxEntry::new("Red Shell", true),
         },
-        Entry {
-            bit: 43,
+        ItemEntry {
+            field: 3,
+            bit: 3,
             checkbox: CheckboxEntry::new("Flipper", true),
         },
-        Entry {
-            bit: 46,
+        ItemEntry {
+            field: 3,
+            bit: 6,
             checkbox: CheckboxEntry::new("Freezie", true),
         },
-        Entry {
-            bit: 56,
+        ItemEntry {
+            field: 5,
+            bit: 0,
             checkbox: CheckboxEntry::new("Mr. Saturn", true),
         },
-        Entry {
-            bit: 29,
+        ItemEntry {
+            field: 1,
+            bit: 5,
             checkbox: CheckboxEntry::new("Poke Ball", true),
         },
-        Entry {
-            bit: 57,
+        ItemEntry {
+            field: 5,
+            bit: 1,
             checkbox: CheckboxEntry::new("Bob-omb", true),
         },
-        Entry {
-            bit: 44,
+        ItemEntry {
+            field: 3,
+            bit: 4,
             checkbox: CheckboxEntry::new("Motion-Sensor Bomb", true),
         },
-        Entry {
-            bit: 37,
+        ItemEntry {
+            field: 2,
+            bit: 5,
             checkbox: CheckboxEntry::new("Super Mushroom", true),
         },
-        Entry {
-            bit: 36,
+        ItemEntry {
+            field: 2,
+            bit: 4,
             checkbox: CheckboxEntry::new("Poison Mushroom", true),
         },
-        Entry {
-            bit: 53,
+        ItemEntry {
+            field: 4,
+            bit: 5,
             checkbox: CheckboxEntry::new("Starman", true),
         },
-        Entry {
-            bit: 50,
+        ItemEntry {
+            field: 4,
+            bit: 2,
             checkbox: CheckboxEntry::new("Parasol", true),
         },
-        Entry {
-            bit: 33,
+        ItemEntry {
+            field: 2,
+            bit: 1,
             checkbox: CheckboxEntry::new("Screw Attack", true),
         },
-        Entry {
-            bit: 31,
+        ItemEntry {
+            field: 1,
+            bit: 7,
             checkbox: CheckboxEntry::new("Metal Box", true),
         },
-        Entry {
-            bit: 32,
+        ItemEntry {
+            field: 2,
+            bit: 0,
             checkbox: CheckboxEntry::new("Bunny Hood", true),
         },
-        Entry {
-            bit: 30,
+        ItemEntry {
+            field: 1,
+            bit: 6,
             checkbox: CheckboxEntry::new("Cloaking Device", true),
         },
-        Entry {
-            bit: 58,
+        ItemEntry {
+            field: 5,
+            bit: 2,
             checkbox: CheckboxEntry::new("Barrel Cannon", true),
         },
-        Entry {
-            bit: 59,
+        ItemEntry {
+            field: 5,
+            bit: 3,
             checkbox: CheckboxEntry::new("Party Ball", true),
         },
     ]

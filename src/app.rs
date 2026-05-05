@@ -175,7 +175,6 @@ impl<'a> App<'a> {
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
         self.update_selection();
         self.update_code();
-        self.update_generate_button_enablement();
         self.update_confirm_button_enablement();
         self.update_items_section_enablement();
 
@@ -431,6 +430,7 @@ impl<'a> App<'a> {
             .iter()
             .enumerate()
             .map(|(index, entry)| code_generation::Bit {
+                field: 0,
                 pos: melee::default_stages()[index].bit,
                 state: entry.checked,
             })
@@ -444,6 +444,7 @@ impl<'a> App<'a> {
             .iter()
             .enumerate()
             .map(|(index, entry)| code_generation::Bit {
+                field: melee::default_items()[index].field,
                 pos: melee::default_items()[index].bit,
                 state: entry.checked,
             })
@@ -471,17 +472,6 @@ impl<'a> App<'a> {
             self.get_item_frequency(),
             self.get_items(),
         );
-    }
-
-    fn update_generate_button_enablement(&mut self) {
-        self.main_view
-            .generate
-            .set_enabled(code_generation::can_be_generated(
-                self.get_stocks(),
-                self.get_time_limit(),
-                self.get_stages(),
-                self.get_item_frequency(),
-            ));
     }
 
     fn update_confirm_button_enablement(&mut self) {
@@ -612,21 +602,18 @@ impl<'a> App<'a> {
                     if handled {
                         self.update_code();
                         self.update_items_section_enablement();
-                        self.update_generate_button_enablement();
                     };
                 }
                 Section::Stages => {
                     handled = self.main_view.stages.handle_key_press(key, self.cursor.pos);
                     if handled {
                         self.update_code();
-                        self.update_generate_button_enablement();
                     };
                 }
                 Section::Items => {
                     handled = self.main_view.items.handle_key_press(key, self.cursor.pos);
                     if handled {
                         self.update_code();
-                        self.update_generate_button_enablement();
                     };
                 }
                 Section::Footer => {

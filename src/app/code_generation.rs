@@ -1,64 +1,85 @@
 use crate::app::melee;
 use bit_vec::BitVec;
 
-const STOCKS_CODE: &str = "C216E91C 0000000F
+const RULES_NO_TIME_LIMIT_NO_ITEMS: &str = "C200C160 0000000D
 3CE08048 80E79D30
 54E7443E 2C070208
-4082005C 886DAFA0
-2C03000{1} 40820050
-3860{2} 3C808045
-6084310E 98640000
-3C808045 60843F9E
-98640000 3C808045
-60844E2E 98640000
-3C808045 60845CBE
-98640000 3E808048
-62940530 3E403001
-6252864C 92540000
-48000004 80010024
+4082004C 88EDAFA0
+2C07000{MODE} 40820040
+80E10104 3D008016
+6108E94C 7C074000
+4082002C 3D008048
+61080530 38E0{STOCKS}
+98E80062 98E80086
+98E800AA 98E800CE
+3CE03001 60E7864C
+90E80000 2C040000
 60000000 00000000";
 
-const TIME_LIMIT_CODE: &str = "C216E750 00000007
+const RULES_NO_TIME_LIMIT_ITEMS: &str = "C200C160 00000013
 3CE08048 80E79D30
 54E7443E 2C070208
-40820020 886DAFA0
-2C03000{1} 40820014
-3A40{2} 3E808048
-62940540 92540000
-3C808017 00000000";
-
-const NO_TIME_LIMIT_CODE: &str = "C216E750 00000008
-3CE08048 80E79D30
-54E7443E 2C070208
-40820024 886DAFA0
-2C03000{1} 40820018
-3E808048 62940530
-3E403001 6252864C
-92540000 3C808017
+4082007C 88EDAFA0
+2C07000{MODE} 40820070
+80E10104 3D008016
+6108E94C 7C074000
+4082005C 3D008048
+61080530 38E0{STOCKS}
+98E80062 98E80086
+98E800AA 98E800CE
+3CE03001 60E7864C
+90E80000 38E0000{ITEM_FREQ}
+98E8000B 38E000{ITEM_BF1}
+98E80023 38E000{ITEM_BF2}
+98E80024 38E000{ITEM_BF3}
+98E80025 38E000{ITEM_BF4}
+98E80026 38E000{ITEM_BF5}
+98E80027 2C040000
 60000000 00000000";
 
-const STAGES_CODE: &str = "C22668BC 00000009
-88EDAFA0 2C07000{1}
+const RULES_TIME_LIMIT_NO_ITEMS: &str = "C200C160 0000000C
+3CE08048 80E79D30
+54E7443E 2C070208
+40820048 88EDAFA0
+2C07000{MODE} 4082003C
+80E10104 3D008016
+6108E94C 7C074000
+40820028 3D008048
+61080530 38E0{STOCKS}
+98E80062 98E80086
+98E800AA 98E800CE
+38E0{TIME} 90E80010
+2C040000 00000000";
+
+const RULES_TIME_LIMIT_ITEMS: &str = "C200C160 00000012
+3CE08048 80E79D30
+54E7443E 2C070208
+40820078 88EDAFA0
+2C07000{MODE} 4082006C
+80E10104 3D008016
+6108E94C 7C074000
+40820058 3D008048
+61080530 38E0{STOCKS}
+98E80062 98E80086
+98E800AA 98E800CE
+38E0{TIME} 90E80010
+38E0000{ITEM_FREQ} 98E8000B
+38E000{ITEM_BF1} 98E80023
+38E000{ITEM_BF2} 98E80024
+38E000{ITEM_BF3} 98E80025
+38E000{ITEM_BF4} 98E80026
+38E000{ITEM_BF5} 98E80027
+2C040000 00000000";
+
+const STAGES: &str = "C22668BC 00000009
+88EDAFA0 2C07000{MODE}
 41820008 4082001C
 3E208045 6231C370
-3E00{2} 6210{3}
+3E00{STAGES_BF1} 6210{STAGES_BF2}
 92110018 4800001C
 3E208045 6231C370
 3E000700 621000B0
 92110018 48000004
-60000000 00000000";
-
-const ITEMS_CODE: &str = "C216E774 0000000B
-3CE08048 80E79D30
-54E7443E 2C070208
-4082003C 88EDAFA0
-2C07000{1} 40820030
-3860000{2} 987F000B
-7C8802A6 80640000
-907F0020 80640004
-907F0024 48000004
-4E800021 {3}
-{4} C022A8C8
 60000000 00000000";
 
 pub struct Metadata {
@@ -105,6 +126,7 @@ impl ItemFrequency {
 
 #[derive(PartialEq)]
 pub struct Bit {
+    pub field: usize,
     pub pos: usize,
     pub state: bool,
 }
@@ -119,6 +141,7 @@ fn default_stages() -> Vec<Bit> {
         .iter()
         .enumerate()
         .map(|(index, entry)| Bit {
+            field: 0,
             pos: melee::default_stages()[index].bit,
             state: entry.checkbox.checked,
         })
@@ -141,33 +164,6 @@ fn build_metadata_code(metadata: &Metadata) -> String {
     return code;
 }
 
-fn build_stocks_code(stocks: u8, game_mode: &GameMode) -> Option<String> {
-    if stocks == melee::default_stocks() {
-        return None;
-    }
-
-    let game_mode_val = game_mode.val().to_string();
-    return Some(
-        STOCKS_CODE
-            .replace("{1}", &game_mode_val)
-            .replace("{2}", &format!("{:01$X}", stocks, 4)),
-    );
-}
-
-fn build_time_limit_code(time_limit: Option<u8>, game_mode: &GameMode) -> Option<String> {
-    if time_limit.unwrap_or(0) == melee::default_time() {
-        return None;
-    }
-
-    let game_mode_val = game_mode.val().to_string();
-    return Some(match time_limit {
-        Some(limit) => TIME_LIMIT_CODE
-            .replace("{1}", &game_mode_val)
-            .replace("{2}", &format!("{:01$X}", limit as u16 * 60, 4)),
-        None => NO_TIME_LIMIT_CODE.replace("{1}", &game_mode_val),
-    });
-}
-
 fn build_stages_code(stages: &Vec<Bit>, game_mode: &GameMode) -> Option<String> {
     if stages == &default_stages() {
         return None;
@@ -183,56 +179,77 @@ fn build_stages_code(stages: &Vec<Bit>, game_mode: &GameMode) -> Option<String> 
     let stages2 = stages1.split_off(4);
 
     return Some(
-        STAGES_CODE
-            .replace("{1}", &game_mode_val)
-            .replace("{2}", &stages1)
-            .replace("{3}", &stages2),
+        STAGES
+            .replace("{MODE}", &game_mode_val)
+            .replace("{STAGES_BF1}", &stages1)
+            .replace("{STAGES_BF2}", &stages2),
     );
 }
 
-fn build_items_code(
-    item_frequency: &ItemFrequency,
-    items: &Vec<Bit>,
-    game_mode: &GameMode,
-) -> Option<String> {
-    if item_frequency.val().is_err() {
-        return None;
-    }
-
-    let game_mode_val = game_mode.val().to_string();
-    let item_frequency_val = item_frequency.val().unwrap();
-
-    let mut items_bitset1 = BitVec::from_elem(32, true);
-    let mut items_bitset2 = BitVec::from_elem(32, true);
-    for entry in items {
-        if entry.pos < 32 {
-            items_bitset1.set(entry.pos, entry.state);
-        } else {
-            items_bitset2.set(entry.pos - 32, entry.state);
+fn choose_base_code(has_time_limit: bool, has_items: bool) -> String {
+    if has_time_limit {
+        if has_items {
+            return RULES_TIME_LIMIT_ITEMS.to_string();
         }
+
+        return RULES_TIME_LIMIT_NO_ITEMS.to_string();
     }
 
-    return Some(
-        ITEMS_CODE
-            .replace("{1}", &game_mode_val)
-            .replace("{2}", &item_frequency_val.to_string())
-            .replace("{3}", &to_hex(&items_bitset1.to_string(), 8))
-            .replace("{4}", &to_hex(&items_bitset2.to_string(), 8)),
-    );
+    if has_items {
+        return RULES_NO_TIME_LIMIT_ITEMS.to_string();
+    }
+
+    return RULES_NO_TIME_LIMIT_NO_ITEMS.to_string();
 }
 
-pub fn can_be_generated(
+fn build_rules_code(
+    game_mode: &GameMode,
     stocks: u8,
     time_limit: Option<u8>,
-    stages: Vec<Bit>,
     item_frequency: ItemFrequency,
-) -> bool {
-    let stocks_default = stocks == melee::default_stocks();
-    let time_default = time_limit.unwrap_or(0) == melee::default_time();
-    let stages_default = stages == default_stages();
-    let items_default = item_frequency.val().is_err();
+    items: Vec<Bit>,
+) -> String {
+    let mut rules = choose_base_code(time_limit.is_some(), item_frequency.val().is_ok())
+        .replace("{MODE}", &game_mode.val().to_string())
+        .replace("{STOCKS}", &format!("{:01$X}", stocks, 4));
 
-    return !stocks_default || !time_default || !stages_default || !items_default;
+    if let Some(limit) = time_limit {
+        rules = rules.replace("{TIME}", &format!("{:01$X}", limit as u16 * 60, 4));
+    }
+
+    if let Ok(freq) = item_frequency.val() {
+        let mut items_bitset1 = BitVec::from_elem(8, true);
+        let mut items_bitset2 = BitVec::from_elem(8, true);
+        let mut items_bitset3 = BitVec::from_elem(8, true);
+        let mut items_bitset4 = BitVec::from_elem(8, true);
+        let mut items_bitset5 = BitVec::from_elem(8, true);
+
+        for entry in items.iter().filter(|item| item.field == 1) {
+            items_bitset1.set(entry.pos, entry.state);
+        }
+        for entry in items.iter().filter(|item| item.field == 2) {
+            items_bitset2.set(entry.pos, entry.state);
+        }
+        for entry in items.iter().filter(|item| item.field == 3) {
+            items_bitset3.set(entry.pos, entry.state);
+        }
+        for entry in items.iter().filter(|item| item.field == 4) {
+            items_bitset4.set(entry.pos, entry.state);
+        }
+        for entry in items.iter().filter(|item| item.field == 5) {
+            items_bitset5.set(entry.pos, entry.state);
+        }
+
+        rules = rules
+            .replace("{ITEM_FREQ}", &freq.to_string())
+            .replace("{ITEM_BF1}", &to_hex(&items_bitset1.to_string(), 2))
+            .replace("{ITEM_BF2}", &to_hex(&items_bitset2.to_string(), 2))
+            .replace("{ITEM_BF3}", &to_hex(&items_bitset3.to_string(), 2))
+            .replace("{ITEM_BF4}", &to_hex(&items_bitset4.to_string(), 2))
+            .replace("{ITEM_BF5}", &to_hex(&items_bitset5.to_string(), 2));
+    }
+
+    return rules;
 }
 
 pub fn generate(
@@ -247,21 +264,14 @@ pub fn generate(
     let mut code = build_metadata_code(&metadata);
     code.push_str("\n");
     code.push_str("#Generated with ssbm-custom-game-mode-generator | by AlexMD");
-    if let Some(stocks_code) = build_stocks_code(stocks, &game_mode) {
-        code += "\n";
-        code += &stocks_code;
-    }
-    if let Some(time_limit_code) = build_time_limit_code(time_limit, &game_mode) {
-        code += "\n";
-        code += &time_limit_code;
-    }
-    if let Some(stages_code) = build_stages_code(&stages, &game_mode) {
-        code += "\n";
-        code += &stages_code;
-    }
-    if let Some(items_code) = build_items_code(&item_frequency, &items, &game_mode) {
-        code += "\n";
-        code += &items_code;
+
+    let rules = build_rules_code(&game_mode, stocks, time_limit, item_frequency, items);
+    code.push_str("\n");
+    code.push_str(&rules);
+
+    if let Some(stages) = build_stages_code(&stages, &game_mode) {
+        code.push_str("\n");
+        code.push_str(&stages);
     }
 
     return code;
