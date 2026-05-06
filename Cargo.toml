@@ -1,6 +1,6 @@
 [package]
 name = "ssbm-custom-game-mode-generator"
-version = "1.0.0"
+version = "1.1.0"
 edition = "2024"
 repository = "https://github.com/AlexMiddletonDalby/SSBM-Custom-Game-Mode-Generator"
 
